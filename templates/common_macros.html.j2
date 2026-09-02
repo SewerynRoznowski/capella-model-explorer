@@ -492,7 +492,7 @@
       The figure below provides an overview of objects that "{{ object.name }}"
       realises but also those that realise "{{ object.name }}"
     </p>
-    {{ render_diagram(object, "realization_view") }}
+    {{ render_diagram(object, "realization_view", include_requirements=True) }}
   {% endif %}
   {% if show_upper %}
     {% if realized_objects %}
