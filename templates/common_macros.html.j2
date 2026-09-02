@@ -138,45 +138,275 @@
 
 {% macro req_rels(rels, scope=None) %}
   {% if rels %}
-    <ul>
-      {% for rel in rels %}
-        {% if scope %}
-          {% if rel.target == scope or rel.source == scope %}
-            <li>
-              <a href="{{ rel.type | make_href }}">{{ rel.type.long_name }}</a>
-              {{ linked_name_with_icon(rel.target) | safe }}
-            </li>
+    <table style="width: 100%;">
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>Relation</th>
+          <th>To</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rel in rels %}
+          {% set include = (not scope) or (rel.target == scope or rel.source == scope) %}
+          {% if include %}
+            {%- set src = rel.source -%}
+            {%- set tgt = rel.target -%}
+            {#- capellambse normalizes CapellaOutgoingRelation so that
+                .source is always the Requirement, even though in Capella
+                the relation actually points from the other object to the
+                requirement. Swap back here to reflect the true direction. -#}
+            {% if rel.__class__.__name__ == "CapellaOutgoingRelation" %}
+              {%- set src, tgt = tgt, src -%}
+            {% endif %}
+            <tr>
+              <td>{{ linked_name_with_icon(src) | safe }}</td>
+              <td><a href="{{ rel.type | make_href }}">{{ rel.type.long_name }}</a></td>
+              <td>{{ linked_name_with_icon(tgt) | safe }}</td>
+            </tr>
           {% endif %}
-        {% else %}
-          <li>
-            <a href="{{ rel.type | make_href }}">{{ rel.type.long_name }}</a>
-            {{ linked_name_with_icon(rel.target) | safe }}
-          </li>
-        {% endif %}
-      {% endfor %}
-    </ul>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
     <p style="color: red;">Not linked to any model objects</p>
   {% endif %}
 {% endmacro %}
 
-{% macro render_requirements_table(reqs, scope=None) %}
+{% macro render_requirements_table_short(reqs, scope=None) %}
   <table>
     {% for req in reqs %}
       <tr>
         <td>
           <a href="{{ req | make_href }}">
-            {{ req.identifier if req.identifier else "REQ-"+req.uuid[-5:] | upper }}
+            {{ req.name if req.name else "REQ-"+req.uuid[-5:] | upper }}
           </a>
         </td>
         <td>
           {{ req.text if req.text else req.long_name }}
-          {{ req_rels(req.relations, scope=scope) | safe }}
-          {{ show_other_attributes(req, excluded=["related", "relations", "requirements", "text", "owner", "validate", "xtype"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+         {# {{ req_rels(req.relations, scope=scope) | safe }} #}
+          {{ show_other_attributes(req, excluded=["attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
         </td>
       </tr>
     {% endfor %}
   </table>
+{% endmacro %}
+
+{% macro render_requirements_table(reqs, scope=None) %}
+  <table>
+    {% for req in reqs %}
+      {% set req_state = get_requirement_state(req.attributes) | trim %}
+      <tr>
+        <td>
+          <a href="{{ req | make_href }}">
+            {{ req.name if req.name else "REQ-"+req.uuid[-5:] | upper }}
+          </a>
+          {% if req_state == "Deprecated" %}
+            <span
+              title="This requirement is marked as Deprecated and should not be used for new work."
+              style="font-size: 80%; color: white; background-color: #888; border-radius: 4px; padding: 1px 6px; margin-left: 4px; cursor: help;"
+            >DEPRECATED</span>
+          {% endif %}
+        </td>
+        <td{% if req_state == "Deprecated" %} style="text-decoration: line-through; color: #888;"{% endif %}>
+          {{ req.text if req.text else req.long_name }}
+         {{ req_rels(req.relations, scope=scope) | safe }}
+          {{ show_other_attributes(req, excluded=["attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endmacro %}
+
+
+{% macro get_requirement_state(attributes) %}
+  {%- for attr in attributes -%}
+    {%- if attr.definition.long_name == "ReqState" -%}
+      {%- if attr.__class__.__name__ == "EnumerationValueAttribute" -%}
+        {{- attr.values | map(attribute="long_name") | join(", ") -}}
+      {%- else -%}
+        {{- attr.value -}}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{% endmacro %}
+
+{% macro collect_requirement_states(reqs, ns) %}
+  {% for req in reqs recursive %}
+    {% if req.__class__.__name__ == "Folder" %}
+      {{ loop(req.requirements) }}
+    {% else %}
+      {% set state = (get_requirement_state(req.attributes) | trim) or "Unset" %}
+      {% set _ = ns.counts.update({state: ns.counts.get(state, 0) + 1}) %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
+{% macro requirement_state_chart(reqs, chart_id) %}
+  {% set ns = namespace(counts={}) %}
+  {{ collect_requirement_states(reqs, ns) }}
+  {% if ns.counts %}
+    <div style="max-width: 360px;">
+      <canvas
+        id="{{ chart_id }}"
+        class="req-state-chart"
+        data-labels="{{ ns.counts.keys() | list | tojson }}"
+        data-values="{{ ns.counts.values() | list | tojson }}"
+      ></canvas>
+    </div>
+  {% else %}
+    <p style="color: red;">No requirements to summarize.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_requirement_attributes(attributes) %}
+  {% if attributes %}
+    <table style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attr in attributes %}
+          <tr>
+            <td style="word-break:normal">{{ attr.definition.long_name }}</td>
+            <td>
+              {%- if attr.__class__.__name__ == "EnumerationValueAttribute" -%}
+                {{ attr.values | map(attribute="long_name") | join(", ") }}
+              {%- else -%}
+                {{ attr.value }}
+              {%- endif -%}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: red;">No attributes defined.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_constraints_table(cons) %}
+  {% if cons %}
+    <table style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Constraint</th>
+          <th>Rule</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for con in cons %}
+          {% set results = evaluate_constraint(con) %}
+          <tr>
+            <td style="white-space: nowrap;">
+              <a href="{{ con | make_href }}">
+                {{ con.name if con.name else "CONSTR-" + con.uuid[-5:] | upper }}
+              </a>
+            </td>
+            <td>
+              {%- if con.specification and "LinkedText" in con.specification -%}
+                {{ con.specification["LinkedText"] | safe }}
+              {%- else -%}
+                <span style="color: gray;">No specification text</span>
+              {%- endif -%}
+            </td>
+            <td>
+              {% if results %}
+                {% for r in results %}
+                  <div style="margin-bottom: 4px;">
+                    <span
+                      style="
+                        color: white;
+                        background-color: {{ '#4caf50' if r.passed else ('#f44336' if r.severity == 'error' else '#ff9800') }};
+                        border-radius: 4px;
+                        padding: 1px 6px;
+                        font-size: 85%;
+                      "
+                    >
+                      {{ 'PASS' if r.passed else r.severity | upper }}
+                    </span>
+                    <span style="font-size: 85%;">{{ r.message }}</span>
+                    {% if not r.backlink_ok %}
+                      <br />
+                      <span
+                        style="color: #b36b00; font-size: 85%;"
+                        title="The owning element of the checked PVMT value is not listed in this constraint's constrained_elements."
+                      >
+                        ⚠ Missing traceability backlink{% if r.owner %}
+                          to {{ linked_name(r.owner) | safe }}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <span style="color: gray;">Not automatically verified</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: red;">No constraints defined.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_pvmt_table(obj, model) %}
+  {% if obj.property_value_groups %}
+    {% set ref_counts = count_constraint_references(model) %}
+    {% for group in obj.property_value_groups %}
+      {% set domain, _, groupname = group.name.partition(".") %}
+      <h3>{{ domain }} &mdash; {{ groupname or group.name }}</h3>
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pv in group.property_values %}
+            {% set count = ref_counts.get(pv.uuid, 0) %}
+            <tr>
+              <td style="word-break:normal">{{ pv.name }}</td>
+              <td>
+                {%- if pv.__class__.__name__ == "EnumerationPropertyValue" -%}
+                  {{ pv.value.name if pv.value else "" }}
+                {%- else -%}
+                  {{ pv.value }}
+                {%- endif -%}
+              </td>
+              <td>
+                {% if count %}
+                  <span
+                    style="
+                      color: white;
+                      background-color: #2196f3;
+                      border-radius: 4px;
+                      padding: 1px 6px;
+                      font-size: 85%;
+                    "
+                  >
+                    {{ count }} constraint{{ "s" if count != 1 else "" }}
+                  </span>
+                {% else %}
+                  <span style="color: gray;">none</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  {% else %}
+    <p style="color: red;">No PVMT values assigned.</p>
+  {% endif %}
 {% endmacro %}
 
 {% macro render_reqs_by_type(reqs, types) %}

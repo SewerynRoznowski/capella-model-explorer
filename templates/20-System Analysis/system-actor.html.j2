@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description, render_reqs_by_type, typed_name, linked_name, linked_name_with_icon %}
+{% from 'common_macros.html.j2' import show_other_attributes, description, render_reqs_by_type, typed_name, linked_name, linked_name_with_icon, render_constraints_table, render_pvmt_table %}
 
 {% if object.name %}
   <h1>
@@ -75,6 +75,12 @@
   {{ render_reqs_by_type(object.requirements, types) | safe }}
 {% endif %}
 
+<h2>Constraints</h2>
+{{ render_constraints_table(find_related_constraints(model, object)) | safe }}
+
+<h2>Property Values (PVMT)</h2>
+{{ render_pvmt_table(object, model) | safe }}
+
 <h2>Traceability</h2>
 {% if object.realized_entities %}
   <p>
@@ -101,6 +107,9 @@
 {%-
   set excluded = [
     "allocated_functions",
+    "applied_property_value_groups",
+    "applied_property_values",
+    "constraints",
     "context_diagram",
     "description",
     "is_actor",
@@ -109,6 +118,8 @@
     "owner",
     "parent",
     "parts",
+    "property_value_groups",
+    "property_values",
     "realized_components",
     "realized_entities",
     "realized_operational_entities",

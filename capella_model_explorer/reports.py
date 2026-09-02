@@ -277,6 +277,18 @@ def make_href_filter(obj: object) -> str | None:
     return _make_href(obj)
 
 
+def tojson_filter(value: t.Any) -> str:
+    """Serialize a value to JSON for embedding in an HTML attribute.
+
+    The result is returned as a plain string (not ``Markup``) so that
+    Jinja's autoescaping converts characters like ``"`` into HTML
+    entities. This keeps the JSON safe to embed inside a quoted HTML
+    attribute (e.g. ``data-labels="{{ value | tojson }}"``), which the
+    browser correctly decodes before ``JSON.parse``/``dataset`` reads it.
+    """
+    return json.dumps(value)
+
+
 def diagram_placeholder(
     parent: capellambse.model.ModelElement,
     attr: str,

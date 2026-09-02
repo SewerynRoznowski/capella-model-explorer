@@ -14,6 +14,12 @@
   scope:
     name: object
     type: CapellaModule
+- id: requirement
+  template: requirement.html.j2
+  name: Requirement
+  description: Template for individual requirement objects
+  scope:
+    type: Requirement
 - id: object_comparison
   template: object_comparison.html.j2
   name: Object Comparison

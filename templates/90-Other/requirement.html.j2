@@ -1,0 +1,46 @@
+{#
+  Copyright DB InfraGO AG and contributors
+  SPDX-License-Identifier: Apache-2.0
+#}
+{% from 'common_macros.html.j2' import show_other_attributes, req_rels, render_requirement_attributes, get_requirement_state %}
+
+{% set req_state = get_requirement_state(object.attributes) | trim %}
+
+{% if object.name %}
+  <h1>
+    {{ object.name }}
+    <span style="font-size: 60%">({{ object.__class__.__name__ }})</span>
+    {% if req_state == "Deprecated" %}
+      <span
+        title="This requirement is marked as Deprecated. It is retained for traceability but should not be referenced for new work."
+        style="font-size: 50%; color: white; background-color: #888; border-radius: 4px; padding: 2px 8px; vertical-align: middle; cursor: help;"
+      >DEPRECATED</span>
+    {% endif %}
+  </h1>
+{% else %}
+  <h1>Unnamed ({{ object.__class__.__name__ }})</h1>
+{% endif %}
+
+{% if req_state == "Deprecated" %}
+  <p style="color: #a00; font-weight: bold;">
+    ⚠ This requirement is marked as <strong>Deprecated</strong> and should not be used for new work.
+  </p>
+{% endif %}
+
+{% if object.text %}
+  <p{% if req_state == "Deprecated" %} style="text-decoration: line-through; color: #888;"{% endif %}>{{ object.text | safe }}</p>
+{% endif %}
+
+<h2>Context Diagram</h2>
+<p>
+  The diagram below shows the context of "{{ object.name }}": the objects it
+  is related to via requirement relations.
+</p>
+{{ render_diagram(object, "context_diagram") }}
+
+{{ req_rels(object.relations) | safe }}
+
+<h2>Attributes of {{ object.name }}</h2>
+{{ render_requirement_attributes(object.attributes) | safe }}
+<h2> Other properties of {{ object.name }}</h2>
+{{ show_other_attributes(object, excluded=["context_diagram", "attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}

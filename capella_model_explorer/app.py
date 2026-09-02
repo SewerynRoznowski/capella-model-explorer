@@ -21,7 +21,7 @@ from fasthtml import common as fh
 from fasthtml import ft
 
 import capella_model_explorer.constants as c
-from capella_model_explorer import components, reports, state
+from capella_model_explorer import components, constraints, reports, state
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,17 @@ async def lifespan(_):
     )
     state.jinja_env.finalize = reports.finalize
     state.jinja_env.filters["make_href"] = reports.make_href_filter
+    state.jinja_env.filters["tojson"] = reports.tojson_filter
     state.jinja_env.globals["render_diagram"] = reports.diagram_placeholder
+    state.jinja_env.globals["evaluate_constraint"] = (
+        constraints.evaluate_constraint
+    )
+    state.jinja_env.globals["find_related_constraints"] = (
+        constraints.find_related_constraints
+    )
+    state.jinja_env.globals["count_constraint_references"] = (
+        constraints.count_constraint_references
+    )
     state.jinja_env.tests["diagram"] = lambda obj: isinstance(
         obj, capellambse.model.AbstractDiagram | capellambse.diagram.Diagram
     )

@@ -2,12 +2,17 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, render_reqs_by_type %}
+{% from 'common_macros.html.j2' import show_other_attributes, render_reqs_by_type, requirement_state_chart %}
 {% set types = model.search("RequirementType") | map(attribute="long_name") | unique | list %}
 
 <h1>Module {{ object.name or object.long_name }}</h1>
 <p>{{ object.text if object.text else object.long_name | safe }}</p>
 <hr style="margin-top:1em" />
+
+{% if object.requirements %}
+  <h2>Requirement Status Overview</h2>
+  {{ requirement_state_chart(object.requirements, "req-state-chart-" + object.uuid) | safe }}
+{% endif %}
 
 {% if object.requirements %}
   <h2>Root level objects</h2>

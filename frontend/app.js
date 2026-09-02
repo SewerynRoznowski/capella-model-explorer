@@ -11,6 +11,17 @@ import "./htmx.js";
 import "idiomorph/dist/idiomorph.js";
 import "idiomorph/dist/idiomorph-ext.js";
 
+import {
+  Chart,
+  ArcElement,
+  PieController,
+  Legend,
+  Tooltip,
+  Title,
+} from "chart.js";
+Chart.register(ArcElement, PieController, Legend, Tooltip, Title);
+window.Chart = Chart;
+
 import "./compiled.css";
 
 window.openDiagramViewer = function (svgContainer) {
@@ -40,3 +51,71 @@ function resetTocOnResize() {
 
 window.addEventListener("resize", resetTocOnResize);
 document.addEventListener("DOMContentLoaded", resetTocOnResize);
+
+const reqStateChartInstances = new Map();
+
+function initRequirementStateCharts(root) {
+  const canvases = root.querySelectorAll
+    ? root.querySelectorAll("canvas.req-state-chart")
+    : [];
+  canvases.forEach((canvas) => {
+    if (reqStateChartInstances.has(canvas.id)) {
+      reqStateChartInstances.get(canvas.id).destroy();
+      reqStateChartInstances.delete(canvas.id);
+    }
+
+    let labels, values;
+    try {
+      labels = JSON.parse(canvas.dataset.labels);
+      values = JSON.parse(canvas.dataset.values);
+    } catch (err) {
+      console.error("Failed to parse requirement chart data", err);
+      return;
+    }
+
+    try {
+      const chart = new window.Chart(canvas, {
+        type: "pie",
+        data: {
+          labels,
+          datasets: [
+            {
+              data: values,
+              backgroundColor: [
+                "#4caf50",
+                "#888888",
+                "#f44336",
+                "#ff9800",
+                "#2196f3",
+                "#9c27b0",
+                "#795548",
+              ],
+            },
+          ],
+        },
+        options: {
+          plugins: {
+            legend: { position: "right" },
+            title: { display: true, text: "Requirement status distribution" },
+          },
+        },
+      });
+      reqStateChartInstances.set(canvas.id, chart);
+    } catch (err) {
+      console.error("Failed to render requirement chart", err);
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () =>
+  initRequirementStateCharts(document),
+);
+document.addEventListener("htmx:afterSwap", (evt) =>
+  initRequirementStateCharts(evt.target),
+);
+document.addEventListener("htmx:oobAfterSwap", (evt) =>
+  initRequirementStateCharts(evt.target),
+);
+document.addEventListener("htmx:afterSettle", (evt) =>
+  initRequirementStateCharts(evt.target),
+);

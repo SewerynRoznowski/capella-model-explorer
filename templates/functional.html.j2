@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from "common_macros.html.j2" import linked_name, linked_name_with_icon, display_property_values, display_traceability, render_requirements_table, draw_icon, first_upper %}
+{% from "common_macros.html.j2" import linked_name, linked_name_with_icon, display_property_values, display_traceability, render_requirements_table_short, draw_icon, first_upper %}
 
 {% macro list_unused_ports(ports_list) %}
   {% set unused_ports = ports_list | rejectattr("exchanges") | list %}
@@ -194,6 +194,6 @@
   {% if object.requirements %}
     <h2>Requirements</h2>
     <p>The following requirement objects are linked to "{{ object.name }}"</p>
-    {{ render_requirements_table(object.requirements) | safe }}
+    {{ render_requirements_table_short(object.requirements) | safe }}
   {% endif %}
 {% endmacro %}
