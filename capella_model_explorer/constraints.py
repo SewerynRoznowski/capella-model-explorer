@@ -83,6 +83,30 @@ def _enum_value(pv: t.Any) -> t.Any:
     return pv.value
 
 
+def pvmt_unit(pv: t.Any) -> str | None:
+    """Return the ``__UNIT__`` value for an applied numeric PVMT property.
+
+    Units are stored as a nested ``__UNIT__`` property value on the
+    *definition* that a PVMT group's applied property links back to via
+    ``applied_property_values``, not on the applied copy itself. This
+    looks up that definition and returns its ``__UNIT__`` child's value,
+    or ``None`` if the property isn't numeric or has no unit defined.
+    """
+    if not isinstance(
+        pv, capellacore.IntegerPropertyValue | capellacore.FloatPropertyValue
+    ):
+        return None
+
+    applied = pv.applied_property_values
+    if not applied:
+        return None
+
+    try:
+        return applied[0].property_values.by_name("__UNIT__").value
+    except KeyError:
+        return None
+
+
 def find_related_constraints(
     model: m.MelodyModel,
     obj: m.ModelElement,

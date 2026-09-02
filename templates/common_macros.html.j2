@@ -367,6 +367,7 @@
           <tr>
             <th>Property</th>
             <th>Value</th>
+            <th>Unit</th>
             <th>Constraints</th>
           </tr>
         </thead>
@@ -382,6 +383,7 @@
                   {{ pv.value }}
                 {%- endif -%}
               </td>
+              <td>{{ pvmt_unit(pv) or "" }}</td>
               <td>
                 {% if count %}
                   <span
