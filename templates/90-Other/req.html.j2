@@ -14,18 +14,36 @@
   {{ requirement_state_chart(object.requirements, "req-state-chart-" + object.uuid) | safe }}
 {% endif %}
 
-{% if object.requirements %}
-  <h2>Root level objects</h2>
-  {{ render_reqs_by_type(object.requirements, types) | safe }}
+{% if object.requirements or object.folders %}
+  <style>
+    #hide-deprecated-reqs-{{ object.uuid }}:checked ~ #req-listing-{{ object.uuid }} .req-deprecated-row {
+      display: none;
+    }
+  </style>
+  <input
+    type="checkbox"
+    id="hide-deprecated-reqs-{{ object.uuid }}"
+    style="cursor: pointer;"
+  />
+  <label for="hide-deprecated-reqs-{{ object.uuid }}" style="cursor: pointer;">
+    Hide deprecated requirements
+  </label>
 {% endif %}
 
-{% if object.folders %}
-  {% for folder in object.folders %}
-    <h2>Folder {{ folder.long_name }}</h2>
-    <p>{{ folder.requirements | length }} requirements in folder</p>
-    {{ render_reqs_by_type(folder.requirements, types) | safe }}
-  {% endfor %}
-{% endif %}
+<div id="req-listing-{{ object.uuid }}">
+  {% if object.requirements %}
+    <h2>Root level objects</h2>
+    {{ render_reqs_by_type(object.requirements, types) | safe }}
+  {% endif %}
+
+  {% if object.folders %}
+    {% for folder in object.folders %}
+      <h2>Folder {{ folder.long_name }}</h2>
+      <p>{{ folder.requirements | length }} requirements in folder</p>
+      {{ render_reqs_by_type(folder.requirements, types) | safe }}
+    {% endfor %}
+  {% endif %}
+</div>
 {%-
   set excluded = [
     "long_name",

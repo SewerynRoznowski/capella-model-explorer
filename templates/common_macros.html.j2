@@ -185,7 +185,7 @@
         <td>
           {{ req.text if req.text else req.long_name }}
          {# {{ req_rels(req.relations, scope=scope) | safe }} #}
-          {{ show_other_attributes(req, excluded=["attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+          {{ show_other_attributes(req, excluded=["attributes", "chapter_name", "context_diagram", "prefix", "progress_status", "related", "relations", "requirements", "text", "type", "owner", "uuid", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
         </td>
       </tr>
     {% endfor %}
@@ -196,7 +196,7 @@
   <table>
     {% for req in reqs %}
       {% set req_state = get_requirement_state(req.attributes) | trim %}
-      <tr>
+      <tr{% if req_state == "Deprecated" %} class="req-deprecated-row"{% endif %}>
         <td>
           <a href="{{ req | make_href }}">
             {{ req.name if req.name else "REQ-"+req.uuid[-5:] | upper }}
@@ -211,7 +211,7 @@
         <td{% if req_state == "Deprecated" %} style="text-decoration: line-through; color: #888;"{% endif %}>
           {{ req.text if req.text else req.long_name }}
          {{ req_rels(req.relations, scope=scope) | safe }}
-          {{ show_other_attributes(req, excluded=["attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+          {{ show_other_attributes(req, excluded=["attributes", "chapter_name", "layer", "prefix", "progress_status", "related", "relations", "requirements", "text", "type", "owner", "uuid", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
         </td>
       </tr>
     {% endfor %}
@@ -259,7 +259,27 @@
   {% endif %}
 {% endmacro %}
 
-{% macro render_requirement_attributes(attributes) %}
+{% macro render_requirement_attributes(req) %}
+  {% set attributes = req.attributes %}
+  {% if req.type and req.type.attributes %}
+    {#- order attributes by the requirement type's attribute definitions,
+        since req.attributes is otherwise in the arbitrary order attributes
+        were added in Capella -#}
+    {% set ordered = [] %}
+    {% for attr_def in req.type.attributes %}
+      {% for attr in attributes %}
+        {% if attr.definition and attr.definition.uuid == attr_def.uuid %}
+          {% set _ = ordered.append(attr) %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% for attr in attributes %}
+      {% if attr not in ordered %}
+        {% set _ = ordered.append(attr) %}
+      {% endif %}
+    {% endfor %}
+    {% set attributes = ordered %}
+  {% endif %}
   {% if attributes %}
     <table style="width: 100%;">
       <thead>

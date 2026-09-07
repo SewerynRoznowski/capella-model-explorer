@@ -41,6 +41,6 @@
 {{ req_rels(object.relations) | safe }}
 
 <h2>Attributes of {{ object.name }}</h2>
-{{ render_requirement_attributes(object.attributes) | safe }}
+{{ render_requirement_attributes(object) | safe }}
 <h2> Other properties of {{ object.name }}</h2>
-{{ show_other_attributes(object, excluded=["context_diagram", "attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+{{ show_other_attributes(object, excluded=["progress_status", "context_diagram", "attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
