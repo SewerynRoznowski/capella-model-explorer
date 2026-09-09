@@ -1,0 +1,24 @@
+{
+  "pvmt_group_name": "constraints.constraints",
+  "property_names": {
+    "expression": "Expression",
+    "numerical_value": "Numerical Value",
+    "permission": "Permission",
+    "unit": "Unit"
+  },
+  "unit_property_name": "__UNIT__",
+  "comparators": {
+    "Equal": "eq",
+    "Not Equal": "ne",
+    "Greater or Equal": "ge",
+    "Less or Equal": "le",
+    "Greater": "gt",
+    "Less": "lt"
+  },
+  "permissions": {
+    "Shall": { "invert": false, "severity": "error" },
+    "Shall Not": { "invert": true, "severity": "error" },
+    "Should": { "invert": false, "severity": "warning" },
+    "Should Not": { "invert": true, "severity": "warning" }
+  }
+}

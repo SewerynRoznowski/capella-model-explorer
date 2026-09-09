@@ -59,6 +59,9 @@ async def lifespan(_):
     state.jinja_env.globals["count_constraint_references"] = (
         constraints.count_constraint_references
     )
+    state.jinja_env.globals["describe_constraint_rule"] = (
+        constraints.describe_constraint_rule
+    )
     state.jinja_env.globals["pvmt_unit"] = constraints.pvmt_unit
     state.jinja_env.tests["diagram"] = lambda obj: isinstance(
         obj, capellambse.model.AbstractDiagram | capellambse.diagram.Diagram
