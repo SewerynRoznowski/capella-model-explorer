@@ -9,9 +9,12 @@
   linked_name_with_icon,
   render_allocated_functions,
   render_capability_section,
+  render_constraints_table,
   render_exchange_items_catalog,
   render_involved_components_section,
   render_interfaces_section,
+  render_pvmt_table,
+  render_reqs_by_type,
   show_other_attributes
 %}
 {% set object = model.sa.root_component %}
@@ -80,6 +83,18 @@
 {% set interfaces = object.related_exchanges %}
 {% set exchange_items_catalog = [] %}
 {{ render_interfaces_section(object, interfaces, exchange_items_catalog) | safe }}
+
+{% if object.requirements %}
+  <h2>8 Requirements</h2>
+  {% set types = model.search("RequirementType") | map(attribute="long_name") | unique | list %}
+  {{ render_reqs_by_type(object.requirements, types) | safe }}
+{% endif %}
+
+<h2>9 Constraints</h2>
+{{ render_constraints_table(find_related_constraints(model, object)) | safe }}
+
+<h2>10 Property Values (PVMT)</h2>
+{{ render_pvmt_table(object, model) | safe }}
 
 {% if exchange_items_catalog %}
   <h2>Appendix A: Exchange Items Catalogue</h2>
