@@ -208,10 +208,15 @@ def _make_href(
             generic_template = template
             continue
 
-        if template.single:
+        if template.scope and not template.scope.applies_to(obj):
             continue
 
-        if template.scope and not template.scope.applies_to(obj):
+        # Singleton templates with no scope (e.g. compliance reports) aren't
+        # tied to any object type, so they're never a link target. One with
+        # a matching scope (e.g. "System Definition") still is - it always
+        # renders the same fixed object, so the uuid in the resulting URL
+        # is unused but harmless.
+        if template.single and template.scope is None:
             continue
 
         return app.app.url_path_for(
