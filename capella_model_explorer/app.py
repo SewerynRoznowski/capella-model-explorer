@@ -195,7 +195,7 @@ def rendered_report(template_id: str, model_element_uuid: str = "") -> t.Any:
     content = ft.Div(
         ft.Div(
             fh.NotStr(processed_html),
-            cls="prose svg-display dark:prose-invert max-w-4xl w-full",
+            cls="prose svg-display dark:prose-invert max-w-4xl w-full min-w-0",
         ),
         components.table_of_contents(toc_items) if toc_items else None,
         ft.Script(
@@ -203,7 +203,7 @@ def rendered_report(template_id: str, model_element_uuid: str = "") -> t.Any:
             "document.getElementById('print-button').classList.remove('hidden');"
             + (toc_button_script * bool(toc_items))
         ),
-        cls="flex flex-row w-full",
+        cls="flex flex-row w-full min-w-0",
     )
     return (
         content,
