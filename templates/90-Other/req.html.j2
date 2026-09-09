@@ -51,6 +51,7 @@
     "parent",
     "requirements",
     "to_reqif",
+    "progress_status",
   ]
 -%}
-{{ show_other_attributes(object, excluded=excluded) | safe }}
+{{ show_other_attributes(object, excluded=excluded, hide_unset_attrs=True, hide_rules_check=True) | safe }}

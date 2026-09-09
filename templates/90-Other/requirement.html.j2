@@ -15,6 +15,11 @@
         title="This requirement is marked as Deprecated. It is retained for traceability but should not be referenced for new work."
         style="font-size: 50%; color: white; background-color: #888; border-radius: 4px; padding: 2px 8px; vertical-align: middle; cursor: help;"
       >DEPRECATED</span>
+    {% elif req_state %}
+      <span
+        title="Current status of this requirement."
+        style="font-size: 50%; color: white; background-color: #3b6ea5; border-radius: 4px; padding: 2px 8px; vertical-align: middle; cursor: help;"
+      >{{ req_state | upper }}</span>
     {% endif %}
   </h1>
 {% else %}

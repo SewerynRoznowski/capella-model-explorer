@@ -206,6 +206,11 @@
               title="This requirement is marked as Deprecated and should not be used for new work."
               style="font-size: 80%; color: white; background-color: #888; border-radius: 4px; padding: 1px 6px; margin-left: 4px; cursor: help;"
             >DEPRECATED</span>
+          {% elif req_state %}
+            <span
+              title="Current status of this requirement."
+              style="font-size: 80%; color: white; background-color: #3b6ea5; border-radius: 4px; padding: 1px 6px; margin-left: 4px; cursor: help;"
+            >{{ req_state | upper }}</span>
           {% endif %}
         </td>
         <td{% if req_state == "Deprecated" %} style="text-decoration: line-through; color: #888;"{% endif %}>
@@ -314,6 +319,7 @@
       <thead>
         <tr>
           <th>Constraint</th>
+          <th>Linked Text</th>
           <th>Rule</th>
           <th>Status</th>
         </tr>
@@ -335,33 +341,41 @@
               {%- endif -%}
             </td>
             <td>
+              {%- set rule_text = describe_constraint_rule(con) -%}
+              {%- if rule_text -%}
+                {{ rule_text }}
+              {%- else -%}
+                <span style="color: gray;">No auto-check rule configured</span>
+              {%- endif -%}
+            </td>
+            <td>
               {% if results %}
                 {% for r in results %}
-                  <div style="margin-bottom: 4px;">
+                  <span
+                    title="{{ r.message }}"
+                    style="
+                      display: inline-block;
+                      color: white;
+                      background-color: {{ '#4caf50' if r.passed else ('#f44336' if r.severity == 'error' else '#ff9800') }};
+                      border-radius: 4px;
+                      padding: 1px 6px;
+                      font-size: 85%;
+                      cursor: help;
+                    "
+                  >{{ 'PASS' if r.passed else r.severity | upper }}</span>
+                  {%- if not r.backlink_ok %}
                     <span
-                      style="
-                        color: white;
-                        background-color: {{ '#4caf50' if r.passed else ('#f44336' if r.severity == 'error' else '#ff9800') }};
-                        border-radius: 4px;
-                        padding: 1px 6px;
-                        font-size: 85%;
-                      "
-                    >
-                      {{ 'PASS' if r.passed else r.severity | upper }}
-                    </span>
-                    <span style="font-size: 85%;">{{ r.message }}</span>
-                    {% if not r.backlink_ok %}
-                      <br />
-                      <span
-                        style="color: #b36b00; font-size: 85%;"
-                        title="The owning element of the checked PVMT value is not listed in this constraint's constrained_elements."
-                      >
-                        ⚠ Missing traceability backlink{% if r.owner %}
-                          to {{ linked_name(r.owner) | safe }}
-                        {% endif %}
-                      </span>
-                    {% endif %}
-                  </div>
+                      style="color: #b36b00; font-size: 85%; cursor: help;"
+                      title="Missing traceability backlink{% if r.owner %} to {{ r.owner.name }}{% endif %}. The owning element of the checked PVMT value is not listed in this constraint's constrained_elements."
+                    >⚠</span>
+                  {%- endif %}
+                  {%- if not r.unit_ok %}
+                    <span
+                      style="color: #b36b00; font-size: 85%; cursor: help;"
+                      title="Unit mismatch: the rule is specified in {{ r.rule_unit }}, but {{ r.property_value.name }} is in {{ r.target_unit }}."
+                    >⚠ unit</span>
+                  {%- endif %}
+                  {%- if not loop.last %}<br />{% endif %}
                 {% endfor %}
               {% else %}
                 <span style="color: gray;">Not automatically verified</span>
@@ -507,7 +521,7 @@
   {%- set realizing_objects = object[realizing_attrs | first] if realizing_attrs else [] -%}
 
   <h2>Traceability</h2>
-  {% if (realized_objects | length > 0 or realizing_objects | length > 0) and "realization_view" in object.__dir__() %}
+  {% if "realization_view" in object.__dir__() %}
     <p>
       The figure below provides an overview of objects that "{{ object.name }}"
       realises but also those that realise "{{ object.name }}"
