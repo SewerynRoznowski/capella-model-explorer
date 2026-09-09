@@ -620,6 +620,7 @@ def template_container(content: t.Any) -> ft.Div:
             "flex",
             "items-start",
             "justify-center",
+            "min-w-0",
             "p-4",
             "print:bg-white",
             "print:m-0",
