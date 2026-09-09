@@ -32,6 +32,11 @@
   single: true
   isExperimental: true
   isDocument: true
+  scope:
+    type: SystemComponent
+    below: sa
+    filters:
+      is_actor: false
 - template: system-interface.html.j2
   id: system-interfaces
   name: System Interfaces
