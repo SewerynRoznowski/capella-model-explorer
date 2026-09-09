@@ -76,6 +76,7 @@ _DEFAULT_CONFIG: dict[str, t.Any] = {
         "unit": "Unit",
     },
     "unit_property_name": "__UNIT__",
+    "unit_literal_property_name": "__LITERAL__",
     "comparators": {
         "EQ": "eq",
         "NEQ": "ne",
@@ -157,6 +158,29 @@ def _enum_value(pv: t.Any) -> t.Any:
     return pv.value
 
 
+def _unit_literal_value(pv: t.Any) -> t.Any:
+    """Resolve an enumeration property value to its canonical unit literal.
+
+    Both a numeric PVMT property's ``__UNIT__`` and a constraint rule's
+    ``Unit`` are enumeration properties whose *chosen literal* itself
+    carries a nested ``__LITERAL__`` property value holding the actual,
+    comparable unit text (e.g. ``"km/h"``) - decoupled from the literal's
+    own display name. Falls back to the plain enum name (:func:`_enum_value`)
+    if that nested property isn't present, so a unit enum without this
+    convention still resolves to something comparable.
+    """
+    if not isinstance(pv, capellacore.EnumerationPropertyValue):
+        return _enum_value(pv)
+    if pv.value is None:
+        return None
+
+    literal_property_name = _load_config()["unit_literal_property_name"]
+    try:
+        return pv.value.property_values.by_name(literal_property_name).value
+    except (KeyError, AttributeError):
+        return _enum_value(pv)
+
+
 def pvmt_unit(pv: t.Any) -> str | None:
     """Return the ``__UNIT__`` value for an applied numeric PVMT property.
 
@@ -177,9 +201,10 @@ def pvmt_unit(pv: t.Any) -> str | None:
 
     unit_property_name = _load_config()["unit_property_name"]
     try:
-        return applied[0].property_values.by_name(unit_property_name).value
+        unit_pv = applied[0].property_values.by_name(unit_property_name)
     except KeyError:
         return None
+    return _unit_literal_value(unit_pv)
 
 
 def find_related_constraints(
@@ -289,7 +314,7 @@ def _rule_config(constraint: m.ModelElement) -> ConstraintRule | None:
         return None
 
     unit_name = names.get("unit")
-    unit = _enum_value(props[unit_name]) if unit_name in props else None
+    unit = _unit_literal_value(props[unit_name]) if unit_name in props else None
 
     return ConstraintRule(expression, threshold, permission, unit)
 

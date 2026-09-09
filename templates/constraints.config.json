@@ -7,6 +7,7 @@
     "unit": "Unit"
   },
   "unit_property_name": "__UNIT__",
+  "unit_literal_property_name": "__LITERAL__",
   "comparators": {
     "Equal": "eq",
     "Not Equal": "ne",
