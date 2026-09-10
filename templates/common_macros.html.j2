@@ -390,6 +390,20 @@
   {% endif %}
 {% endmacro %}
 
+{% macro render_constraints_section(object, model, heading="Constraints") %}
+  {% set cons = find_related_constraints(model, object) %}
+  <h2>{{ heading }}</h2>
+  {% if cons %}
+    <p>
+      The table below lists every constraint linked to
+      <i>{{ object.name }}</i>, either directly or through a PVMT value it
+      owns, along with whether it passes its auto-check (if one is
+      configured).
+    </p>
+  {% endif %}
+  {{ render_constraints_table(cons) | safe }}
+{% endmacro %}
+
 {% macro render_pvmt_table(obj, model) %}
   {% if obj.property_value_groups %}
     {% set ref_counts = count_constraint_references(model) %}
@@ -443,6 +457,18 @@
   {% else %}
     <p style="color: red;">No PVMT values assigned.</p>
   {% endif %}
+{% endmacro %}
+
+{% macro render_pvmt_section(object, model, heading="Property Values (PVMT)") %}
+  <h2>{{ heading }}</h2>
+  {% if object.property_value_groups %}
+    <p>
+      The table below lists every PVMT property value applied to
+      <i>{{ object.name }}</i>, grouped by domain, along with its unit and
+      how many constraints reference it.
+    </p>
+  {% endif %}
+  {{ render_pvmt_table(object, model) | safe }}
 {% endmacro %}
 
 {% macro render_reqs_by_type(reqs, types) %}
@@ -1287,3 +1313,150 @@
     </ul>
   {%- endif -%}
 {%- endmacro %}
+
+{% macro render_node_behavior_function_involvement(object) %}
+  {#
+    Physical Architecture only: allocation there is Node -> Behavior ->
+    Function (a Function is allocated to a Behavior component, which is in
+    turn deployed onto a Node component) - unlike a plain flat "which
+    entity owns this function" check, which is meaningless for a Node
+    (nature=NODE), since a Node can never own a function directly.
+
+    Walks every involved function up to its owning Behavior, then to every
+    Node that Behavior is deployed onto, and groups Node -> Behavior ->
+    [Functions]. A Node found this way that isn't also in the capability's
+    own direct involved_elements is flagged - it's functionally necessary
+    for the capability, but nobody explicitly marked it as involved.
+  #}
+  {%- set functions = object.involved_functions -%}
+  {%- set direct_involved = object.involved_elements
+    | selectattr("__class__.__name__", "equalto", "PhysicalComponent")
+    | list
+  -%}
+
+  {% if functions %}
+    <h3>Data Flow Diagram</h3>
+    <p>
+      The diagram below provides an overview of the Physical System (green)
+      and actor (blue) functions that are required to realise the
+      Capability.
+    </p>
+    {{ render_diagram(object, "data_flow_view") }}
+    <p>
+      This section groups those functions by the behaviour they're
+      allocated to, and by the node that behaviour is deployed onto.
+    </p>
+  {% else %}
+    <p style="color: red;">No functions are involved.</p>
+  {% endif %}
+
+  {#
+    A Behavior can be deployed onto another Behavior (a layered software
+    stack), not just directly onto a Node - resolve_hosting_nodes() walks
+    that chain however deep it goes, rather than assuming a single hop.
+  #}
+  {%- set derived_nodes = [] -%}
+  {%- set unhosted_behaviors = [] -%}
+  {%- for func in functions -%}
+    {%- set behavior = func.owner -%}
+    {%- if behavior -%}
+      {%- set hosts = resolve_hosting_nodes(behavior) -%}
+      {%- if hosts -%}
+        {%- for node in hosts if node not in derived_nodes -%}
+          {{- derived_nodes.append(node) -}}
+        {%- endfor -%}
+      {%- elif behavior not in unhosted_behaviors -%}
+        {{- unhosted_behaviors.append(behavior) -}}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+  {% for node in derived_nodes %}
+    {%- set behaviors_on_node = [] -%}
+    {%- for func in functions -%}
+      {%- set behavior = func.owner -%}
+      {%- if
+        behavior
+        and node in resolve_hosting_nodes(behavior)
+        and behavior not in behaviors_on_node
+      -%}
+        {{- behaviors_on_node.append(behavior) -}}
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- set outer_node = resolve_outermost_node(node) -%}
+    <h3>
+      {%- if outer_node != node -%}
+        {{ outer_node.name }}'s {{ node.name }}
+      {%- else -%}
+        {{ node.name }}
+      {%- endif -%}
+    </h3>
+    <p>
+      To enable the Capability <b>{{ object.name }}</b>,
+      {% if outer_node != node %}
+        the {{ linked_name_with_icon(outer_node) | safe }}'s
+        {{ linked_name_with_icon(node) | safe }}
+      {% else %}
+        the {{ linked_name_with_icon(node) | safe }}
+      {% endif %}
+      node hosts the following behaviour(s):
+    </p>
+    {% if node not in direct_involved %}
+      <p style="color: #b36b00;">
+        &#9888; {{ node.name }} hosts a behaviour with an involved function,
+        but isn't itself directly listed as involved in this Capability.
+      </p>
+    {% endif %}
+
+    {% for behavior in behaviors_on_node %}
+      {%- set outer_behavior = resolve_outermost_behavior(behavior) -%}
+      <h4>{{ linked_name(behavior) }}</h4>
+      <p>
+        To enable the Capability <b>{{ object.name }}</b> the
+        {{ linked_name_with_icon(node) | safe }} deploys
+        {{ linked_name_with_icon(behavior) | safe }}
+        {% if outer_behavior != behavior %}
+          , which is part of {{ linked_name_with_icon(outer_behavior) | safe }}
+        {% endif %}
+        , to enable:
+      </p>
+      <ul>
+        {% for func in functions | selectattr("owner", "equalto", behavior) %}
+          <li>{{ linked_name_with_icon(func) | safe }}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% endfor %}
+
+  {% if unhosted_behaviors %}
+    <h3>Not deployed to any Node</h3>
+    {% for behavior in unhosted_behaviors %}
+      {%- set outer_behavior = resolve_outermost_behavior(behavior) -%}
+      <h4>{{ linked_name(behavior) }}</h4>
+      <p>
+        To enable the Capability <b>{{ object.name }}</b> the
+        {{ linked_name_with_icon(behavior) | safe }}
+        {% if outer_behavior != behavior %}
+          , which is part of {{ linked_name_with_icon(outer_behavior) | safe }}
+        {% endif %}
+        shall:
+      </p>
+      <ul>
+        {% for func in functions | selectattr("owner", "equalto", behavior) %}
+          <li>{{ linked_name_with_icon(func) | safe }}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% endif %}
+
+  {%- set no_owner = functions | selectattr("owner", "none") | list -%}
+  {% if no_owner %}
+    <h4>Functions without an owning Behaviour</h4>
+    <ul>
+      {% for func in no_owner %}
+        <li>{{ linked_name_with_icon(func) | safe }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}

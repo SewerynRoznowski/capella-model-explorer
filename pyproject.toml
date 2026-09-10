@@ -40,6 +40,7 @@ dependencies = [
   "prometheus-client>=0.23.1",
   "python-fasthtml>=0.12.35",
   "uvicorn>=0.38.0",
+  "wireviz>=0.4.1",
 ]
 
 [project.scripts]

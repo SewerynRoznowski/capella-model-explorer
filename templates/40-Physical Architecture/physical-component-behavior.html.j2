@@ -5,12 +5,9 @@
 {%
   from 'common_macros.html.j2' import
   description,
-  display_property_label,
   display_property_values,
-  linked_name_with_icon,
   render_allocated_functions,
   render_capability_section,
-  render_connected_nodes_section,
   render_exchange_items_catalog,
   render_interfaces_section,
   show_other_attributes
@@ -28,13 +25,12 @@
 {%- endfor -%}
 {{ render_capability_section(object, capabilities) | safe }}
 
-<h2>Component Boundary</h2>
+<h2>Context</h2>
 <p>
-  The figure below provides an overview of <i>{{ object.name }}</i>'s boundary
-  and depicts all the nodes that it is connected to.
+  The figure below shows the context of <i>{{ object.name }}</i> within the
+  physical architecture.
 </p>
 {{ render_diagram(object, "context_diagram", display_derived_interfaces=True) }}
-{{ render_connected_nodes_section(object, capabilities) | safe }}
 
 <h2>Allocated Functions</h2>
 {{ render_allocated_functions(object) | safe }}
@@ -43,43 +39,6 @@
 {% set interfaces = object.related_exchanges %}
 {% set exchange_items_catalog = [] %}
 {{ render_interfaces_section(object, interfaces, exchange_items_catalog) | safe }}
-<h2>Electrical interfaces of {{ object.name }}</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th>Port</th>
-      <th>Cable ID</th>
-      <th>Target</th>
-      <th>Target Port</th>
-    </tr>
-  </thead>
-  <tbody>
-    {%- for port in object.physical_ports %}
-      {%- set cables = port.links %}
-      {%- if cables %}
-        {%- for cable in cables %}
-          <tr>
-            {%- set other_port = cable.ends | reject("equalto", port) | first %}
-            {%- if loop.first %}
-              <td rowspan="{{ cables | length }}">
-                {{ linked_name_with_icon(port) | safe }}
-              </td>
-            {%- endif %}
-            <td>{{ linked_name_with_icon(cable) | safe }}</td>
-            <td>{{ linked_name_with_icon(other_port.owner) | safe }}</td>
-            <td>{{ linked_name_with_icon(other_port) | safe }}</td>
-          </tr>
-        {%- endfor %}
-      {%- else %}
-        <tr>
-          <td>{{ linked_name_with_icon(port) | safe }}</td>
-          <td colspan="3">No cable connections planned</td>
-        </tr>
-      {%- endif %}
-    {%- endfor %}
-  </tbody>
-</table>
 
 {{ display_property_values(object) | safe }}
 
@@ -103,6 +62,7 @@
       "owner",
       "parent",
       "parts",
+      "physical_ports",
       "ports",
       "realizing_components",
       "related_exchanges",

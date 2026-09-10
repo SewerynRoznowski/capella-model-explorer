@@ -21,7 +21,14 @@ from fasthtml import common as fh
 from fasthtml import ft
 
 import capella_model_explorer.constants as c
-from capella_model_explorer import components, constraints, reports, state
+from capella_model_explorer import (
+    components,
+    constraints,
+    interfaces,
+    physical,
+    reports,
+    state,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +70,28 @@ async def lifespan(_):
         constraints.describe_constraint_rule
     )
     state.jinja_env.globals["pvmt_unit"] = constraints.pvmt_unit
+    state.jinja_env.globals["get_interface_type"] = (
+        interfaces.get_interface_type
+    )
+    state.jinja_env.globals["render_harness_diagram"] = (
+        interfaces.render_harness_diagram
+    )
+    state.jinja_env.globals["get_port_interface_type"] = (
+        interfaces.get_port_interface_type
+    )
+    state.jinja_env.globals["render_connector_diagram"] = (
+        interfaces.render_connector_diagram
+    )
+    state.jinja_env.globals["get_display_label"] = interfaces.get_display_label
+    state.jinja_env.globals["resolve_hosting_nodes"] = (
+        physical.resolve_hosting_nodes
+    )
+    state.jinja_env.globals["resolve_outermost_behavior"] = (
+        physical.resolve_outermost_behavior
+    )
+    state.jinja_env.globals["resolve_outermost_node"] = (
+        physical.resolve_outermost_node
+    )
     state.jinja_env.tests["diagram"] = lambda obj: isinstance(
         obj, capellambse.model.AbstractDiagram | capellambse.diagram.Diagram
     )

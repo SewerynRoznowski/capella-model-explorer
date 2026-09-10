@@ -1,0 +1,23 @@
+{
+  "link_pvmt_group_name": "Interfaces.Physical Links",
+  "port_pvmt_group_name": "Interfaces.Physical Ports",
+  "property_names": {
+    "interface_type": "Interface Type"
+  },
+  "interface_types": {
+    "mechanical custom": "mechanical_custom",
+    "mechanical standard": "mechanical_standard",
+    "electrical custom": "electrical_custom",
+    "electrical standard": "electrical_standard"
+  },
+  "display_labels": {
+    "mechanical_custom": "Custom Mechanical Interface",
+    "mechanical_standard": "Standard Mechanical Interface",
+    "electrical_custom": "Cable Harness",
+    "electrical_standard": "Standard Cable"
+  },
+  "artifacts_dir": "artifacts",
+  "harness_file": "harness.yaml",
+  "connector_file": "connector.yaml",
+  "index_file": "index.yaml"
+}

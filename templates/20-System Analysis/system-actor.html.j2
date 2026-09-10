@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description, render_reqs_by_type, typed_name, linked_name, linked_name_with_icon, render_constraints_table, render_pvmt_table %}
+{% from 'common_macros.html.j2' import show_other_attributes, description, render_reqs_by_type, typed_name, linked_name, linked_name_with_icon, render_constraints_section, render_pvmt_section %}
 
 {% if object.name %}
   <h1>
@@ -75,11 +75,9 @@
   {{ render_reqs_by_type(object.requirements, types) | safe }}
 {% endif %}
 
-<h2>Constraints</h2>
-{{ render_constraints_table(find_related_constraints(model, object)) | safe }}
+{{ render_constraints_section(object, model) | safe }}
 
-<h2>Property Values (PVMT)</h2>
-{{ render_pvmt_table(object, model) | safe }}
+{{ render_pvmt_section(object, model) | safe }}
 
 <h2>Traceability</h2>
 {% if object.realized_entities %}

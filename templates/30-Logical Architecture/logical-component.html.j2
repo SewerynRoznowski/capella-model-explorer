@@ -19,7 +19,12 @@
 {{ description(object) | safe }}
 
 <h2>Capabilities</h2>
-{% set capabilities = object.involved_capabilities %}
+{%- set capabilities = [] -%}
+{%- for cap in model.search("CapabilityRealization", below=model.la) -%}
+  {%- if object in cap.involved_elements -%}
+    {{- capabilities.append(cap) -}}
+  {%- endif -%}
+{%- endfor -%}
 {{ render_capability_section(object, capabilities) | safe }}
 
 <h2>Component Boundary</h2>

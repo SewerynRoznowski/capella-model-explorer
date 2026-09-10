@@ -9,7 +9,7 @@
   render_reqs_by_type,
   linked_name,
   linked_name_with_icon,
-  render_data_flow_and_involved_activities,
+  render_node_behavior_function_involvement,
   render_related_diagrams,
   render_constraints,
   display_traceability
@@ -32,27 +32,8 @@
   <p style="color:red">No post-condition defined</p>
 {% endif %}
 
-<h2>Context Diagram</h2>
-<p>
-  The diagram below provides an overview of the components immediately involved
-  in the Capability and related Capabilities.
-</p>
-{{ render_diagram(object, "context_diagram") }}
-
 <h2>Functional Requirements</h2>
-{{
-  render_data_flow_and_involved_activities(
-    object,
-    object.involved_functions,
-    object.involved_components,
-    "The diagram below provides an overview of the Physical System (green) and actor (blue) functions that are required to realise the Capability.",
-    "This section provides a summary of what functions are required from the Physical System and the actors to enable the CapabilityRealization.",
-    "CapabilityRealization",
-    "functions",
-    "components",
-    "PhysicalComponent"
-  )
-}}
+{{ render_node_behavior_function_involvement(object) | safe }}
 {%- set related_chains = (object.involved_chains + object.owned_chains) | unique(attribute="uuid") | list -%}
 {%- if related_chains -%}
   <h2>Related Functional Chains</h2>

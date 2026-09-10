@@ -2,7 +2,16 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, linked_name, display_property_values %}
+{%
+  from 'common_macros.html.j2' import
+  description,
+  linked_name,
+  linked_name_with_icon,
+  render_constraints_section,
+  render_pvmt_section,
+  render_reqs_by_type,
+  show_other_attributes
+%}
 
 <h1>Physical Link <b>{{ object.name }}</b></h1>
 
@@ -10,26 +19,72 @@
   <p>A part of {{ linked_name(object.parent) | safe }}</p>
 {% endif %}
 
+{{ description(object) | safe }}
+
+<h2>Context</h2>
+<p>
+  The figure below shows the context of <i>{{ object.name }}</i>: the two
+  ports it connects and the components that own them.
+</p>
 {{ render_diagram(object, "context_diagram") }}
 
 <p>
-  Connects {{ linked_name(object.ends[0].owner) | safe }} via
-  {{ linked_name(object.ends[0]) | safe }} port and
-  {{ linked_name(object.ends[1].owner) | safe }} via
-  {{ linked_name(object.ends[1]) | safe }} port.
+  Connects {{ linked_name_with_icon(object.ends[0].owner) | safe }} via
+  {{ linked_name_with_icon(object.ends[0]) | safe }} port and
+  {{ linked_name_with_icon(object.ends[1].owner) | safe }} via
+  {{ linked_name_with_icon(object.ends[1]) | safe }} port.
 </p>
 
-{{ display_property_values(object ) | safe }}
+<h2>Cable Tree</h2>
+<p>
+  The figure below shows the cable tree that <i>{{ object.name }}</i> is
+  part of: every physical link reachable by following connected ports
+  outward from this one, not just its own two ends.
+</p>
+{{ render_diagram(object, "cable_tree") }}
+
+{%- set interface_type = get_interface_type(object) -%}
+{% if interface_type %}
+  <h2>Interface: {{ get_display_label(interface_type) }}</h2>
+  {%- set harness_svg = render_harness_diagram(model, object) -%}
+  {% if harness_svg %}
+    <p>
+      The figure below shows the wiring harness that implements this link,
+      rendered from its linked artifact.
+    </p>
+    {{ harness_svg }}
+  {% else %}
+    <p style="color: gray;">
+      No artifact found in <code>artifacts/index.yaml</code> for this link.
+    </p>
+  {% endif %}
+{% endif %}
+
+{% if object.requirements %}
+  <h2>Linked Requirement objects</h2>
+  {% set types = model.search("RequirementType") | map(attribute="long_name") | unique | list %}
+  {{ render_reqs_by_type(object.requirements, types) | safe }}
+{% endif %}
+
+{{ render_constraints_section(object, model) | safe }}
+
+{{ render_pvmt_section(object, model) | safe }}
+
+<h2>Other Properties</h2>
 {%-
   set excluded = [
     "applied_property_value_groups",
+    "cable_tree",
     "context_diagram",
+    "description",
     "ends",
     "linkEnds",
+    "links",
     "name",
     "owner",
     "parent",
     "property_value_groups",
+    "requirements",
     "source",
     "target",
     "xtype",

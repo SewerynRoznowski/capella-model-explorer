@@ -1,0 +1,89 @@
+{#
+  Copyright DB InfraGO AG and contributors
+  SPDX-License-Identifier: Apache-2.0
+#}
+{%
+  from 'common_macros.html.j2' import
+  description,
+  linked_name,
+  linked_name_with_icon,
+  render_constraints_section,
+  render_pvmt_section,
+  render_reqs_by_type,
+  show_other_attributes
+%}
+
+<h1>Physical Port <b>{{ object.name }}</b></h1>
+
+{% if object.owner %}
+  <p>A part of {{ linked_name(object.owner) | safe }}</p>
+{% endif %}
+
+{{ description(object) | safe }}
+
+<h2>Context</h2>
+<p>
+  The figure below shows the context of <i>{{ object.name }}</i>: the
+  component it belongs to and what it connects to.
+</p>
+{{ render_diagram(object, "context_diagram") }}
+
+{%- set cables = object.links -%}
+<h2>Connections</h2>
+{% if cables %}
+  {% for cable in cables %}
+    {%- set other_port = cable.ends | reject("equalto", object) | first -%}
+    <p>
+      Connected to {{ linked_name_with_icon(other_port.owner) | safe }} via
+      {{ linked_name_with_icon(other_port) | safe }} port, through
+      {{ linked_name_with_icon(cable) | safe }}.
+    </p>
+  {% endfor %}
+{% else %}
+  <p style="color: gray;">No cable connections planned.</p>
+{% endif %}
+
+{%- set interface_type = get_port_interface_type(object) -%}
+{% if interface_type %}
+  <h2>Connector: {{ get_display_label(interface_type) }}</h2>
+  {%- set connector_svg = render_connector_diagram(model, object) -%}
+  {% if connector_svg %}
+    <p>
+      The figure below shows this port's physical connector, rendered from
+      its linked artifact.
+    </p>
+    {{ connector_svg }}
+  {% else %}
+    <p style="color: gray;">
+      No artifact found in <code>artifacts/index.yaml</code> for this port.
+    </p>
+  {% endif %}
+{% endif %}
+
+{% if object.requirements %}
+  <h2>Linked Requirement objects</h2>
+  {% set types = model.search("RequirementType") | map(attribute="long_name") | unique | list %}
+  {{ render_reqs_by_type(object.requirements, types) | safe }}
+{% endif %}
+
+{{ render_constraints_section(object, model) | safe }}
+
+{{ render_pvmt_section(object, model) | safe }}
+
+<h2>Other Properties</h2>
+{%-
+  set excluded = [
+    "aggregation_kind",
+    "applied_property_value_groups",
+    "context_diagram",
+    "description",
+    "links",
+    "name",
+    "owner",
+    "parent",
+    "property_value_groups",
+    "requirements",
+    "xtype",
+  ]
+-%}
+{{ show_other_attributes(object, excluded=excluded) | safe }}
