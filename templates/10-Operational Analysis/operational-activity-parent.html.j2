@@ -3,10 +3,14 @@
   SPDX-License-Identifier: Apache-2.0
 #}
 {% from "common_macros.html.j2" import render_artifacts_section, show_other_attributes %}
-{% from 'operational.html.j2' import describe_activity_context, describe_activity_intro, describe_activity_io, describe_activity_tail %}
+{% from 'functional.html.j2' import describe_decomposition %}
+{% from 'operational.html.j2' import describe_activity_io, describe_activity_tail, describe_parent_activity_intro %}
 
-{{ describe_activity_intro(object) | safe }}
-{{ describe_activity_context(object) | safe }}
+{#- A parent activity: the context diagram would show it as a lone box,
+    because the work and most of the interactions sit in its children.
+    The boundary and hierarchy views take its place. -#}
+{{ describe_parent_activity_intro(object) | safe }}
+{{ describe_decomposition(object) | safe }}
 {{ describe_activity_io(object) | safe }}
 {{ describe_activity_tail(object) | safe }}
 
@@ -14,10 +18,12 @@
 {%-
   set excluded = [
     "available_in_states",
+    "activities",
     "boundary_view",
     "context_diagram",
-    "description",
+    "functions",
     "hierarchy_view",
+    "description",
     "inputs",
     "name",
     "outputs",

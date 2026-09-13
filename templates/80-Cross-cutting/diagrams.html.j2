@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description, linked_name_with_icon %}
+{% from "common_macros.html.j2" import description, linked_name_with_icon, render_artifacts_section, show_other_attributes %}
 
 <h1>{{ object.name }}</h1>
 {{ object }}
@@ -38,3 +38,11 @@
 {% else %}
   <p style="color:red">No referenced objects available.</p>
 {% endif %}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

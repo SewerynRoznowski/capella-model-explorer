@@ -31,12 +31,42 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "capellambse-context-diagrams>=0.7.23",
+  # Supplies context_diagram and the rest of the generated diagrams,
+  # including hierarchy_view, boundary_view and the
+  # hide_non_leaf_functions render parameter that the function and
+  # capability templates depend on. Those live in this fork and are
+  # not in any release on PyPI, so a plain version requirement would
+  # install an upstream build whose templates fail to render.
+  #
+  # Pinned to a commit for the same reason as mbse-artifact-viewer
+  # below: a branch name moves without invalidating the Docker layer
+  # that installs dependencies, so tracking one yields an image that
+  # silently keeps whatever revision was current when that layer was
+  # first built. Bumping this SHA is a commit here, which makes the
+  # upgrade deliberate and visible in this repository's history.
+  "capellambse-context-diagrams @ git+https://github.com/SewerynRoznowski/capellambse-context-diagrams.git@380e551c834aedf66042b795d7854c764837e6f1",
   "capellambse>=0.7.12",
   "click>=8.3.1",
   "jinja2>=3.1.6",
   "logfmter>=0.0.11",
   "lxml>=6.0.2",
+  # Renders artifact folders (artifact.yaml manifests) bound to model
+  # elements. A direct reference rather than a PyPI name: the package is
+  # not published, and the name is unclaimed on PyPI, so a plain
+  # requirement would resolve to nothing (or, one day, to somebody
+  # else's package). The [pdf] extra is what lets a section ask for
+  # pages 14-15 and get those pages rather than the whole document;
+  # wireviz is declared below in its own right.
+  #
+  # Pinned to a commit, not @main. A Docker build caches the layer that
+  # installs dependencies, and its cache key is the layers above it -
+  # which do not change when a branch moves. Tracking @main therefore
+  # produces an image that is neither reproducible nor updatable: it
+  # silently keeps whatever revision was current when that layer was
+  # first built. Bumping this SHA is a commit here, which invalidates the
+  # COPY layer and makes the upgrade both deliberate and visible in this
+  # repository's history.
+  "mbse-artifact-viewer[pdf] @ git+https://github.com/SewerynRoznowski/Artifact-Renderer.git@f1cd01fdd0a4810e2f59effbea08b8ee4297e8cb",
   "prometheus-client>=0.23.1",
   "python-fasthtml>=0.12.35",
   "uvicorn>=0.38.0",

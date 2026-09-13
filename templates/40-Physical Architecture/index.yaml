@@ -47,11 +47,23 @@
 - template: physical-function.html.j2
   id: physical-function
   name: Physical Functions
-  description: Defines function of a physical component or an actor
+  description: Defines a function of a physical component or an actor that is carried out as a single step
   isExperimental: true
   scope:
     type: PhysicalFunction
     below: pa
+    filters:
+      sub_functions: empty
+- template: physical-function-parent.html.j2
+  id: physical-function-parent
+  name: Parent Physical Functions
+  description: A function that exists to organise sub-functions rather than to do work itself, with its boundary and its internal data flow
+  isExperimental: true
+  scope:
+    type: PhysicalFunction
+    below: pa
+    filters:
+      sub_functions: not_empty
 - template: sw-interface.html.j2
   id: sw-interface
   name: Software Interfaces

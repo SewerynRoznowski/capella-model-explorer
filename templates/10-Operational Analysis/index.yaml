@@ -19,11 +19,23 @@
 - template: operational-activity.html.j2
   id: operational-activity
   name: Operational Activity
-  description: Specifies an operational activity.
+  description: Specifies an operational activity that is carried out as a single step.
   isExperimental: true
   scope:
     type: OperationalActivity
     below: oa
+    filters:
+      sub_functions: empty
+- template: operational-activity-parent.html.j2
+  id: operational-activity-parent
+  name: Parent Operational Activities
+  description: An activity that exists to organise sub-activities rather than to be carried out itself, with its boundary and its internal data flow.
+  isExperimental: true
+  scope:
+    type: OperationalActivity
+    below: oa
+    filters:
+      sub_functions: not_empty
 - template: operational-process.html.j2
   id: operational-process
   name: Operational Process

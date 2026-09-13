@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes %}
+{% from "common_macros.html.j2" import render_artifacts_section, show_other_attributes %}
 {% from 'functional.html.j2' import describe_function %}
 
 {{ describe_function(object) | safe }}
@@ -12,8 +12,10 @@
   set excluded = [
     "applied_property_value_groups",
     "available_in_states",
+    "boundary_view",
     "context_diagram",
     "description",
+    "hierarchy_view",
     "inputs",
     "name",
     "outputs",
@@ -27,3 +29,11 @@
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

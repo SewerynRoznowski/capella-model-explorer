@@ -4,15 +4,18 @@
 #}
 {%
   from 'common_macros.html.j2' import
-  show_other_attributes,
   description,
-  render_reqs_by_type,
+  display_traceability,
   linked_name,
   linked_name_with_icon,
+  render_artifacts_section,
+  render_capability_relations,
+  render_states_table,
+  render_constraints,
   render_node_behavior_function_involvement,
   render_related_diagrams,
-  render_constraints,
-  display_traceability
+  render_reqs_by_type,
+  show_other_attributes
 %}
 
 <h1>{{ object.name }}</h1>
@@ -31,6 +34,19 @@
 {% else %}
   <p style="color:red">No post-condition defined</p>
 {% endif %}
+
+{{ render_capability_relations(object) | safe }}
+
+{% if object.available_in_states %}
+  <h2>Availability</h2>
+  {{
+    render_states_table(
+      object.available_in_states,
+      "The capability " ~ object.name ~ " is only available while the system is in the following states or modes:"
+    ) | safe
+  }}
+{% endif %}
+
 
 <h2>Functional Requirements</h2>
 {{ render_node_behavior_function_involvement(object) | safe }}
@@ -64,11 +80,18 @@
 
 {%-
   set excluded = [
+    "available_in_states",
     "constraints",
     "context_diagram",
     "data_flow_view",
     "description",
     "diagrams",
+    "extended_by",
+    "extends",
+    "generalized_by",
+    "generalizes",
+    "included_by",
+    "includes",
     "involved_chains",
     "involved_components",
     "involved_functions",
@@ -84,3 +107,11 @@
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

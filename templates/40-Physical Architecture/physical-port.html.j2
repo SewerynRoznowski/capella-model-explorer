@@ -7,6 +7,7 @@
   description,
   linked_name,
   linked_name_with_icon,
+  render_artifacts_section,
   render_constraints_section,
   render_pvmt_section,
   render_reqs_by_type,
@@ -44,21 +45,13 @@
 {% endif %}
 
 {%- set interface_type = get_port_interface_type(object) -%}
-{% if interface_type %}
-  <h2>Connector: {{ get_display_label(interface_type) }}</h2>
-  {%- set connector_svg = render_connector_diagram(model, object) -%}
-  {% if connector_svg %}
-    <p>
-      The figure below shows this port's physical connector, rendered from
-      its linked artifact.
-    </p>
-    {{ connector_svg }}
-  {% else %}
-    <p style="color: gray;">
-      No artifact found in <code>artifacts/index.yaml</code> for this port.
-    </p>
-  {% endif %}
-{% endif %}
+{{
+  render_artifacts_section(
+    object, model,
+    type_label=get_display_label(interface_type) if interface_type else None,
+    type_heading="Connector",
+  ) | safe
+}}
 
 {% if object.requirements %}
   <h2>Linked Requirement objects</h2>

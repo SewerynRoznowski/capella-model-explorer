@@ -5,13 +5,15 @@
 {%
   from 'common_macros.html.j2' import
   description,
+  render_owned_state_machines,
   display_property_label,
   linked_name_with_icon,
   render_allocated_functions,
+  render_artifacts_section,
   render_capability_section,
   render_exchange_items_catalog,
-  render_involved_components_section,
   render_interfaces_section,
+  render_involved_components_section,
   show_other_attributes
 %}
 
@@ -55,6 +57,8 @@
 {% endif %}
 
 <h2>Other Properties</h2>
+{{ render_owned_state_machines(object) | safe }}
+
 {%-
   set excluded = [
     "allocated_functions",
@@ -68,8 +72,17 @@
     "ports",
     "realizing_components",
     "related_exchanges",
+    "state_machine_view",
     "state_machines",
     "xtype",
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

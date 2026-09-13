@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description, render_reqs_by_type, typed_name, linked_name, linked_name_with_icon, render_constraints_section, render_pvmt_section %}
+{% from "common_macros.html.j2" import description, linked_name, linked_name_with_icon, render_artifacts_section, render_constraints_section, render_pvmt_section, render_reqs_by_type, show_other_attributes, typed_name %}
 
 {% if object.name %}
   <h1>
@@ -129,3 +129,11 @@
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

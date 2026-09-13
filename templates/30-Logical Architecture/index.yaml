@@ -39,10 +39,21 @@
 - template: logical-function.html.j2
   id: logical-function
   name: Logical Functions
-  description: Defines function of a logical system component or an actor
+  description: Defines a function of a logical system component or an actor that is carried out as a single step
   scope:
     type: LogicalFunction
     below: la
+    filters:
+      sub_functions: empty
+- template: logical-function-parent.html.j2
+  id: logical-function-parent
+  name: Parent Logical Functions
+  description: A function that exists to organise sub-functions rather than to do work itself, with its boundary and its internal data flow
+  scope:
+    type: LogicalFunction
+    below: la
+    filters:
+      sub_functions: not_empty
 
 - template: ../functional-chain.html.j2
   id: functional-chain

@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from "common_macros.html.j2" import linked_name, linked_name_with_icon, display_property_values, display_traceability, render_requirements_table_short, draw_icon, first_upper %}
+{% from "common_macros.html.j2" import display_property_values, display_traceability, draw_icon, first_upper, linked_name, linked_name_with_icon, render_artifacts_section, render_requirements_table_short %}
 
 {% macro list_unused_ports(ports_list) %}
   {% set unused_ports = ports_list | rejectattr("exchanges") | list %}
@@ -141,7 +141,54 @@
   {% endif %}
 {% endmacro %}
 
-{% macro describe_function(object) %}
+{#
+  `sub_functions(object)` is a global provided by the app. It does not
+  use `AbstractFunction.functions`: capellambse declares
+  pa.PhysicalFunction.functions against the XML tag of physical
+  *components*, so that attribute is always empty for physical
+  functions. The parent side is correct on every layer.
+#}
+{% macro describe_decomposition(object) %}
+  {%- set children = sub_functions(object) -%}
+  <h2>Decomposition</h2>
+  <p>
+    <i>{{ object.name }}</i> is not carried out as a single step. It is broken
+    down into the {{ children | length }} sub-function{{ "s" if children | length != 1 }}
+    below, and it is those that own the exchanges.
+  </p>
+  <ul>
+    {% for child in children %}
+      <li>
+        {{ linked_name_with_icon(child) | safe }}
+        {%- if child.owner %}
+          &nbsp;&mdash; allocated to {{ linked_name_with_icon(child.owner) | safe }}
+        {%- endif -%}
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h3>Boundary</h3>
+  <p>
+    The diagram below hides everything inside <i>{{ object.name }}</i> and
+    keeps only the exchanges that cross its boundary, so it shows what the
+    function as a whole needs and what it delivers. A dashed edge is one whose
+    real end is a sub-function rather than
+    <i>{{ object.name }}</i> itself.
+  </p>
+  {{ render_diagram(object, "boundary_view") }}
+
+  <h3>Internal data flow</h3>
+  <p>
+    The same function unfolded: the frame holds the sub-functions and the
+    exchanges between them, with the exchanges that leave the frame drawn to
+    the function on the other side.
+  </p>
+  {{ render_diagram(object, "hierarchy_view") }}
+{% endmacro %}
+
+{#- Heading, allocation, involvement and description. Shared by the
+    leaf and the decomposed variant of the function page. -#}
+{% macro describe_function_intro(object) %}
   <h1>{{ first_upper(object.name) }}</h1>
   <small class="print:hidden" style="opacity:0.5;"
     >UUID: {{ object.uuid }}</small
@@ -175,7 +222,26 @@
   {% else %}
     <p style="color:red">No description available.</p>
   {% endif %}
+{% endmacro %}
 
+{#- Exchanges, property values, traceability and requirements. Shared by
+    the leaf and the decomposed variant of the function page. -#}
+{% macro describe_function_details(object) %}
+  {{ describe_inputs(object) | safe }}
+  {{ describe_outputs(object) | safe }}
+  {{ display_property_values(object) | safe }}
+  {{ display_traceability(object) | safe }}
+  {% if object.requirements %}
+    <h2>Requirements</h2>
+    <p>The following requirement objects are linked to "{{ object.name }}"</p>
+    {{ render_requirements_table_short(object.requirements, element=object) | safe }}
+  {% endif %}
+{% endmacro %}
+
+{#- A leaf function: it does the work itself, so its own exchanges and
+    its functional context are the whole story. -#}
+{% macro describe_function(object) %}
+  {{ describe_function_intro(object) | safe }}
   {{ describe_availability_conditions(object) | safe }}
   <h2>Context Diagram</h2>
   <p>
@@ -187,13 +253,60 @@
   </p>
 
   {{ render_diagram(object, "context_diagram") }}
-  {{ describe_inputs(object) | safe }}
-  {{ describe_outputs(object) | safe }}
-  {{ display_property_values(object) | safe }}
-  {{ display_traceability(object) | safe }}
-  {% if object.requirements %}
-    <h2>Requirements</h2>
-    <p>The following requirement objects are linked to "{{ object.name }}"</p>
-    {{ render_requirements_table_short(object.requirements) | safe }}
+  {{ describe_function_details(object) | safe }}
+{% endmacro %}
+
+{#- Heading, supported capabilities and description for a parent
+    function.
+
+    Deliberately not describe_function_intro: that one opens with the
+    allocation, and a parent function has none to state. It organises
+    sub-functions rather than doing work, so it is the children that get
+    allocated to an entity. Reporting "not allocated to any entity" here
+    would flag the normal case as a problem, and phrasing the capability
+    contribution in terms of an "Unallocated entity" says nothing at
+    all. -#}
+{% macro describe_parent_function_intro(object) %}
+  <h1>{{ first_upper(object.name) }}</h1>
+  <small class="print:hidden" style="opacity:0.5;"
+    >UUID: {{ object.uuid }}</small
+  >
+
+  {% if object.involved_in %}
+    <p><i>{{ object.name }}</i> contributes to:</p>
+    <ul>
+      {% for capability in object.involved_in %}
+        <li style="display: block;">
+          {{ linked_name_with_icon(capability) | safe }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if object.description %}
+    <p>{{ object.description }}</p>
+  {% else %}
+    <p style="color:red">No description available.</p>
   {% endif %}
 {% endmacro %}
+
+{#- A parent function: the context diagram would show it as a lone box,
+    because the work and most of the exchanges sit in its children. The
+    boundary and hierarchy views take its place.
+
+    The conditional-availability section is left out for the same reason
+    as the allocation: availability is bound to the states of the entity
+    a function is allocated to, and a parent function has no entity. -#}
+{% macro describe_parent_function(object) %}
+  {{ describe_parent_function_intro(object) | safe }}
+  {{ describe_decomposition(object) | safe }}
+  {{ describe_function_details(object) | safe }}
+{% endmacro %}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

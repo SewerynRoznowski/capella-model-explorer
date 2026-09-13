@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description %}
+{% from "common_macros.html.j2" import description, has_substates, render_artifacts_section, render_state_machine, show_other_attributes %}
 
 {% macro render_name_with_icon(obj) %}
   <a href="hlink://{{ obj.uuid }}">
@@ -32,6 +32,16 @@
   <span style="font-weight:normal">{{ object.__class__.__name__ }}</span>
   {{ object.name }}
 </h2>
+
+{#- A leaf state would render as a single box, which says nothing. -#}
+{% if has_substates(object) | trim %}
+  {{
+    render_state_machine(
+      object,
+      intro="What happens inside this " ~ object.__class__.__name__ | lower ~ ", and how its sub-states hand over to one another."
+    ) | safe
+  }}
+{% endif %}
 
 {% if object.incoming_transitions %}
   <p>
@@ -120,7 +130,16 @@
     "name",
     "outgoing_transitions",
     "related_transitions",
+    "state_machine_view",
     "xtype",
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

@@ -7,6 +7,7 @@
   description,
   linked_name,
   linked_name_with_icon,
+  render_artifacts_section,
   render_constraints_section,
   render_pvmt_section,
   render_reqs_by_type,
@@ -44,21 +45,13 @@
 {{ render_diagram(object, "cable_tree") }}
 
 {%- set interface_type = get_interface_type(object) -%}
-{% if interface_type %}
-  <h2>Interface: {{ get_display_label(interface_type) }}</h2>
-  {%- set harness_svg = render_harness_diagram(model, object) -%}
-  {% if harness_svg %}
-    <p>
-      The figure below shows the wiring harness that implements this link,
-      rendered from its linked artifact.
-    </p>
-    {{ harness_svg }}
-  {% else %}
-    <p style="color: gray;">
-      No artifact found in <code>artifacts/index.yaml</code> for this link.
-    </p>
-  {% endif %}
-{% endif %}
+{{
+  render_artifacts_section(
+    object, model,
+    type_label=get_display_label(interface_type) if interface_type else None,
+    type_heading="Interface",
+  ) | safe
+}}
 
 {% if object.requirements %}
   <h2>Linked Requirement objects</h2>

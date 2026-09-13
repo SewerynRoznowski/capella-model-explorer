@@ -57,6 +57,52 @@ SVG_WRAP_MARKUP = markupsafe.Markup(
 logger = logging.getLogger(__name__)
 
 
+sub_functions = core.sub_functions
+"""Re-exported from `core` so templates and scopes share one definition."""
+
+
+SCOPE_ATTRIBUTES: dict[str, t.Callable[[m.ModelElement], t.Any]] = {
+    "sub_functions": sub_functions,
+}
+"""Computed attributes that a template scope may filter on.
+
+These take precedence over an attribute of the same name on the model
+element itself.
+"""
+
+
+def _scope_attribute(obj: m.ModelElement, key: str) -> t.Any:
+    if (getter := SCOPE_ATTRIBUTES.get(key)) is not None:
+        return getter(obj)
+    return getattr(obj, key)
+
+
+def _filter_matches(actual: t.Any, expected: t.Any) -> bool:
+    """Check one ``scope.filters`` entry against an element.
+
+    Besides comparing for equality, the filter value may be the string
+    ``not_empty`` or ``empty`` to test an attribute for truthiness.
+    """
+    if expected == "not_empty":
+        return bool(actual)
+    if expected == "empty":
+        return not actual
+    return bool(actual == expected)
+
+
+def _matches_filters(
+    obj: m.ModelElement, filters: dict[str, t.Any] | None
+) -> bool:
+    for key, value in (filters or {}).items():
+        try:
+            actual = _scope_attribute(obj, key)
+        except AttributeError:
+            return False
+        if not _filter_matches(actual, value):
+            return False
+    return True
+
+
 class Template(p.BaseModel):
     id: str = p.Field(title="Template identifier")
     name: str = p.Field(title="Template name")
@@ -121,16 +167,7 @@ class Template(p.BaseModel):
             raise ValueError("No search criteria provided")
 
         if filters:
-            filtered = []
-            for object in objects:
-                for attr_key, filter in filters.items():
-                    attr = getattr(object, attr_key)
-                    if filter == "not_empty":
-                        if attr:
-                            filtered.append(object)
-                    elif attr == filter:
-                        filtered.append(object)
-            objects = filtered
+            objects = [o for o in objects if _matches_filters(o, filters)]
         return objects
 
     def _simple_object(self, obj) -> dict[str, t.Any]:
@@ -165,15 +202,7 @@ class TemplateScope(p.BaseModel):
         ):
             return False
 
-        for key, value in (self.filters or {}).items():
-            try:
-                actual = getattr(obj, key)
-            except AttributeError:
-                return False
-            if actual != value:
-                return False
-
-        return True
+        return _matches_filters(obj, self.filters)
 
 
 class TemplateCategory(p.BaseModel):

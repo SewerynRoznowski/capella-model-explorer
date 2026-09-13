@@ -4,9 +4,13 @@
 #}
 {%
   from 'common_macros.html.j2' import
-  render_functional_chain,
-  render_related_diagrams,
   display_traceability,
+  render_artifacts_section,
+  render_constraints_section,
+  render_functional_chain,
+  render_pvmt_section,
+  render_related_diagrams,
+  render_requirements_table_short,
   show_other_attributes
 %}
 
@@ -15,6 +19,23 @@
 {{ display_traceability(object) | safe }}
 
 {{ render_related_diagrams(object) | safe }}
+
+{#
+  render_requirements_table_short rather than render_reqs_by_type: the
+  latter groups by RequirementType long_name and renders nothing at all
+  for a requirement whose type is not one of those, which is a silent
+  empty section. Passing `element` also labels each row with how the
+  requirement relates - Satisfies, Assumes, Guaranteed By.
+#}
+{% if object.requirements %}
+  <h2>Requirements</h2>
+  <p>The following requirement objects are linked to "{{ object.name }}"</p>
+  {{ render_requirements_table_short(object.requirements, element=object) | safe }}
+{% endif %}
+
+{{ render_constraints_section(object, model) | safe }}
+
+{{ render_pvmt_section(object, model) | safe }}
 
 <h2>Other attributes</h2>
 {%-
@@ -34,3 +55,11 @@
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

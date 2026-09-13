@@ -128,17 +128,13 @@ RUN uv sync \
     --no-editable
 
 # ------------------------------------------------------------
-# Override capellambse-context-diagrams with a custom fork/branch
-# ------------------------------------------------------------
-
-RUN uv pip install \
-    --python /app/bin/python \
-    --no-deps \
-    --force-reinstall \
-    "capellambse-context-diagrams @ git+https://github.com/SewerynRoznowski/capellambse-context-diagrams.git@Add-Requirements-context-diagram"
-
-# ------------------------------------------------------------
 # Verify that the runtime environment really contains CME
+#
+# capellambse-context-diagrams needs no override step here: pyproject.toml
+# requires it straight from the fork, pinned to a commit, so the uv sync
+# above already installs the right build. A post-install override would
+# also have defeated --locked, because it reinstalled a revision the lock
+# file knew nothing about.
 # ------------------------------------------------------------
 
 RUN /app/bin/python -c "import capellambse; print('capellambse OK')" && \

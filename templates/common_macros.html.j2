@@ -56,6 +56,58 @@
   {% endif %}
 {% endmacro %}
 
+{#
+  The six ways one capability can relate to another. Capella stores each
+  as a relation object rather than a plain link, and the two directions
+  of a relation are separate attributes: on a forward one (extends,
+  includes, generalizes) this capability is the source and the other end
+  is `.target`, on a reverse one (extended_by, included_by,
+  generalized_by) it is the other way round. That is why each group
+  carries the name of the endpoint to follow.
+#}
+{% macro render_capability_relations(object) %}
+  {%- set groups = [
+    ("extends", object.extends, "target",
+     "It contributes optional behaviour to each of these, which stay complete without it."),
+    ("is extended by", object.extended_by, "source",
+     "Each of these contributes optional behaviour to it."),
+    ("includes", object.includes, "target",
+     "Each of these is always carried out as part of it."),
+    ("is included by", object.included_by, "source",
+     "It is always carried out as part of each of these."),
+    ("generalizes", object.generalizes, "target",
+     "Each of these is a more specific form of it."),
+    ("is a specialization of", object.generalized_by, "source",
+     "It is a more specific form of each of these."),
+  ] -%}
+  {%- set has_relations =
+    object.extends
+    or object.extended_by
+    or object.includes
+    or object.included_by
+    or object.generalizes
+    or object.generalized_by
+  -%}
+
+  {% if has_relations %}
+    <h2>Related Capabilities</h2>
+    {% for phrase, relations, endpoint, explanation in groups %}
+      {% if relations %}
+        <p><b>{{ object.name }}</b> {{ phrase }}:</p>
+        <ul>
+          {% for relation in relations %}
+            {%- set other = relation[endpoint] -%}
+            {% if other %}
+              <li>{{ linked_name_with_icon(other) | safe }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        <p>{{ explanation }}</p>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
 {% macro show_other_attributes(object, object_diff={}, display_modified_changes=None, excluded=[], hide_rules_check=False, hide_unset_attrs=False) %}
   {% set excluded = ["from_model", "pvmt", "validate", "validation", "visible_on_diagrams"] + excluded %}
   {% set empty_attrs = [] %}
@@ -76,9 +128,18 @@
         <th>Value</th>
       </tr>
     </thead>
+    {#-
+      A method is not a property. capellambse exposes a few of them
+      (iter_ancestors, validate) alongside the real attributes, and
+      printing one yields "<bound method ... of <Element ...>>" with the
+      element's entire repr dragged in behind it. Skipping callables
+      outright covers any that capellambse adds later, and drops them
+      from the unset list too - a method is neither set nor unset.
+    -#}
     {%- for attr in object.__dir__() | sort if not attr.startswith("_") and attr not in excluded -%}
       {%- set value = object[attr] -%}
-      {% if value %}
+      {% if value is callable %}
+      {% elif value %}
         <tr>
           {% if attr in attr_diff and attr_change == "modified" %}
             <td style="word-break:normal; background-color:rgb(255, 218, 148)">
@@ -173,7 +234,34 @@
   {% endif %}
 {% endmacro %}
 
-{% macro render_requirements_table_short(reqs, scope=None) %}
+{#
+  How `req` is related to `element` - "Satisfies", "Assumes", "Guaranteed
+  By" and so on. The name lives on the relation, not on the requirement,
+  so it can only be found by looking at the relations of the element the
+  page is about.
+
+  RelationType carries the readable name in `long_name`; `name` is empty
+  in practice, so long_name comes first with name as the fallback.
+
+  A relation runs in either direction depending on its kind, so the
+  requirement may be at either end - whichever end is not `element` is
+  the one to match on.
+#}
+{% macro requirement_relation_type(req, element) %}
+  {%- for rel in element.requirements_relations -%}
+    {%- set other = rel.source if rel.target and rel.target.uuid == element.uuid else rel.target -%}
+    {%- if other and other.uuid == req.uuid and rel.type -%}
+      {{- rel.type.long_name or rel.type.name -}}
+    {%- endif -%}
+  {%- endfor -%}
+{% endmacro %}
+
+{#
+  `element` is optional: given one, each row also says how the
+  requirement is related to it. Without it the table is unchanged, so
+  existing callers are unaffected.
+#}
+{% macro render_requirements_table_short(reqs, scope=None, element=None) %}
   <table>
     {% for req in reqs %}
       <tr>
@@ -181,6 +269,12 @@
           <a href="{{ req | make_href }}">
             {{ req.name if req.name else "REQ-"+req.uuid[-5:] | upper }}
           </a>
+          {% if element %}
+            {% set relation = requirement_relation_type(req, element) | trim %}
+            {% if relation %}
+              <div style="color: gray; font-size: 0.9em;">{{ relation }}</div>
+            {% endif %}
+          {% endif %}
         </td>
         <td>
           {{ req.text if req.text else req.long_name }}
@@ -310,6 +404,205 @@
     </table>
   {% else %}
     <p style="color: red;">No attributes defined.</p>
+  {% endif %}
+{% endmacro %}
+
+{#
+  Walks a State up to whatever owns its state machine.
+
+  A State sits in a Region, the Region in a StateMachine, and the
+  StateMachine on a Component or Entity. Which of the two it is varies by
+  layer, so this stops at the first ancestor that is no longer part of
+  the state machine itself rather than assuming a fixed number of hops.
+#}
+{% macro state_owner(state) %}
+  {%- set ns = namespace(current=state.parent) -%}
+  {%- for _ in range(8) -%}
+    {%- if
+      ns.current is not none
+      and ns.current.__class__.__name__ in ("Region", "StateMachine", "State", "Mode")
+    -%}
+      {%- set ns.current = ns.current.parent -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if ns.current is not none -%}{{ linked_name_with_icon(ns.current) | safe }}{%- endif -%}
+{% endmacro %}
+
+{#
+  A table of the states or modes an element is available in.
+
+  Generic on purpose: `available_in_states` is offered by capabilities
+  and functions alike, and both want the same two questions answered -
+  which state, and whose state it is. The behaviour attached to a state
+  belongs on that state's own page; repeating it here only crowds out
+  the answer the reader came for.
+#}
+{#
+  The state chart of one state machine, region or composite state.
+
+  A leaf state has nothing to draw - its view would be a single box - so
+  callers that may hand one in should guard with `has_substates`.
+#}
+{% macro render_state_machine(object, heading=None, intro=None) %}
+  {% if heading %}<h3>{{ heading }}</h3>{% endif %}
+  {% if intro %}<p>{{ intro }}</p>{% endif %}
+  {{ render_diagram(object, "state_machine_view") }}
+{% endmacro %}
+
+{#
+  Whether a state or mode is decomposed. Capella creates a region inside
+  every state whether it is used or not, so the regions have to be
+  checked for content rather than merely counted.
+#}
+{% macro has_substates(state) %}
+  {%- set found = [] -%}
+  {%- for region in state.regions -%}
+    {%- if region.states -%}{{- found.append(region) -}}{%- endif -%}
+  {%- endfor -%}
+  {{- "yes" if found else "" -}}
+{% endmacro %}
+
+{#
+  Every state machine owned by a component or entity, each as a chart.
+#}
+{% macro render_owned_state_machines(object) %}
+  {% if object.state_machines %}
+    <h2>States and Modes</h2>
+    <p>
+      The following state
+      machine{{ "s describe" if object.state_machines | length != 1 else " describes" }}
+      the modes and states of <i>{{ object.name }}</i>:
+    </p>
+    {% for machine in object.state_machines %}
+      {{ render_state_machine(machine, heading=machine.name) | safe }}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{#
+  A table of the states or modes an element is available in.
+
+  Grouped by region, because a flat list misreads an orthogonal machine.
+  Regions run concurrently: the system occupies one state in each of
+  them at the same time. So states drawn from the same region are
+  alternatives, and states drawn from different regions all hold at
+  once. Listing "Manual, Autonomous, Movement" as one set says any of
+  the three will do; what the model means is (Manual or Autonomous) and
+  Movement.
+
+  Generic on purpose: `available_in_states` is offered by capabilities
+  and functions alike, and both want the same questions answered - which
+  states, whose states they are, and how they combine.
+#}
+{% macro render_states_table(states, intro=None) %}
+  {% if states %}
+    {#- Group by region, keeping the order the states arrived in. -#}
+    {%- set groups = [] -%}
+    {%- for state in states -%}
+      {%- set region = state.parent -%}
+      {%- set ns = namespace(placed=false) -%}
+      {%- for group in groups -%}
+        {%- if group[0] is not none
+          and region is not none
+          and group[0].uuid == region.uuid -%}
+          {{- group[1].append(state) -}}
+          {%- set ns.placed = true -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- if not ns.placed -%}{{- groups.append([region, [state]]) -}}{%- endif -%}
+    {%- endfor -%}
+
+    {%- set concurrent = groups | length > 1 -%}
+    {#- Regions are orthogonal proper when one owner holds them all. -#}
+    {%- set owners = [] -%}
+    {%- for group in groups -%}
+      {%- set owner = group[0].parent if group[0] is not none else none -%}
+      {%- if owner is not none and owner.uuid not in owners -%}
+        {{- owners.append(owner.uuid) -}}
+      {%- endif -%}
+    {%- endfor -%}
+
+    {% if intro %}<p>{{ intro }}</p>{% endif %}
+    {% if concurrent %}
+      <p>
+        These states sit in
+        {{ groups | length }} concurrent regions
+        {%- if owners | length > 1 %}
+          of different state machines, which run independently of one
+          another
+        {%- endif -%}. The system is in one state from
+        <b>each</b> region at the same time, so every line below has to
+        hold at once; the alternatives within a line are what may vary.
+      </p>
+    {% endif %}
+
+    <table style="width: 100%;">
+      <thead>
+        <tr>
+          {% if concurrent %}<th>Region</th>{% endif %}
+          <th>State or Mode</th>
+          <th>Of</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+          {% for state in group[1] %}
+            <tr>
+              {% if concurrent and loop.first %}
+                <td rowspan="{{ group[1] | length }}" style="white-space: nowrap;">
+                  {%- if group[0] is not none -%}
+                    {{ linked_name_with_icon(group[0]) | safe }}
+                    {%- if group[1] | length > 1 %}
+                      <div style="font-size: 0.85em; opacity: 0.7;">
+                        any one of these
+                      </div>
+                    {% endif -%}
+                  {%- else -%}
+                    <span style="color: gray;">No region</span>
+                  {%- endif -%}
+                </td>
+              {% endif %}
+              <td style="white-space: nowrap;">
+                {{ linked_name_with_icon(state) | safe }}
+              </td>
+              <td>
+                {%- set owner = state_owner(state) | trim -%}
+                {%- if owner -%}
+                  {{ owner | safe }}
+                {%- else -%}
+                  <span style="color: gray;">Not attached to a state machine</span>
+                {%- endif -%}
+              </td>
+              <td>
+                {%- if state.description -%}
+                  {{ state.description }}
+                {%- elif state.summary -%}
+                  {{ state.summary }}
+                {%- else -%}
+                  <span style="color: gray;">No description</span>
+                {%- endif -%}
+              </td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if concurrent %}
+      <p>
+        In short:
+        {% for group in groups -%}
+          {%- if not loop.first %} and {% endif -%}
+          {%- if group[1] | length > 1 %}({% endif -%}
+          {%- for state in group[1] -%}
+            {%- if not loop.first %} or {% endif -%}
+            <b>{{ state.name }}</b>
+          {%- endfor -%}
+          {%- if group[1] | length > 1 %}){% endif -%}
+        {%- endfor -%}.
+      </p>
+    {% endif %}
   {% endif %}
 {% endmacro %}
 
@@ -471,12 +764,26 @@
   {{ render_pvmt_table(object, model) | safe }}
 {% endmacro %}
 
+{#
+  The trailing None is the catch-all for requirements that carry no type
+  at all, which is a normal thing for a requirement to be - so it needs a
+  heading that reads like one. Formatting it like the others produced a
+  section titled literally: Of type "None".
+
+  `group` rather than reusing `reqs`: the original shadowed the macro's
+  own argument inside the loop, which happens to work because Jinja scopes
+  a `set` to one iteration, but reads like a bug every time.
+#}
 {% macro render_reqs_by_type(reqs, types) %}
   {% for req_type in types+[None] %}
-    {% set reqs = reqs.by_type(req_type) %}
-    {% if reqs %}
-      <h3>Of type "{{ req_type | string }}"</h3>
-      {{ render_requirements_table(reqs) | safe }}
+    {% set group = reqs.by_type(req_type) %}
+    {% if group %}
+      {% if req_type %}
+        <h3>Of type "{{ req_type }}"</h3>
+      {% else %}
+        <h3>Without a requirement type</h3>
+      {% endif %}
+      {{ render_requirements_table(group) | safe }}
     {% endif %}
   {% endfor %}
 {% endmacro %}
@@ -1036,19 +1343,103 @@
   {% endfor %}
 {% endmacro %}
 
-{% macro render_interfaces_section(object, interfaces, exchange_items_catalog) %}
-  {% macro describe_exchange(object) %}
-    {%- set source_function = object.source.owner -%}
-    {%- set target_function = object.target.owner -%}
-    {%- set source = source_function.owner -%}
-    {%- set target = target_function.owner -%}
-    The {{ linked_name_with_icon(source) | safe }} shall provide
-    {{ linked_name_with_icon(object) | safe }} to
+{#
+  One sentence naming who provides what to whom, and what the receiver
+  does with it.
+
+  A functional exchange runs port to port; the components are two hops
+  up, and either hop can be missing when a function is not allocated.
+  That is a modelling gap worth showing rather than rendering as
+  "Deleted object", which is what linking a null would produce.
+#}
+{% macro describe_interface_exchange(exchange) %}
+  {%- set source_function = exchange.source.owner -%}
+  {%- set target_function = exchange.target.owner -%}
+  {%- set source = source_function.owner if source_function else none -%}
+  {%- set target = target_function.owner if target_function else none -%}
+  {% if source %}
+    The {{ linked_name_with_icon(source) | safe }}
+  {% else %}
+    <span style="color:red">An unallocated function</span>
+  {% endif %}
+  shall provide {{ linked_name_with_icon(exchange) | safe }} to
+  {% if target %}
     {{ linked_name_with_icon(target) | safe }} so that the
     {{ linked_name_with_icon(target) | safe }} could
-    {{ linked_name_with_icon(target_function)|safe }}.
-  {% endmacro %}
+    {{ linked_name_with_icon(target_function) | safe }}.
+  {% elif target_function %}
+    {{ linked_name_with_icon(target_function) | safe }}, which is
+    <span style="color:red">not allocated to any component</span>.
+  {% else %}
+    <span style="color:red">an unidentified receiver</span>.
+  {% endif %}
+{% endmacro %}
 
+{#
+  The functional interactions an interface carries, one row each.
+
+  Shared by the System Definition document and the interface's own page
+  so the two never drift apart. `exchange_items_catalog` is optional:
+  the document collects items into an appendix, a single interface page
+  has nowhere to send them.
+#}
+{% macro render_interface_exchanges(interface, exchange_items_catalog=None) %}
+  {% if interface.allocated_functional_exchanges %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Interaction description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exchange in interface.allocated_functional_exchanges %}
+          <tr>
+            <td style="white-space: nowrap;">
+              <a href="{{ exchange | make_href }}"
+                >{{ "LEXC-" + exchange.uuid[:5] | upper }}</a
+              >
+            </td>
+            <td>
+              {{ describe_interface_exchange(exchange) | safe }}
+              {% if exchange.exchange_items %}
+                {% if exchange.exchange_items | length > 1 %}
+                  <p>
+                    {{ exchange.name }} is further specified via the following
+                    Exchange Items:
+                  </p>
+                  <ul>
+                    {%- for item in exchange.exchange_items -%}
+                      <li>{{ linked_name_with_icon(item) | safe }}</li>
+                      {%- if exchange_items_catalog is not none
+                        and item not in exchange_items_catalog -%}
+                        {{- exchange_items_catalog.append(item) -}}
+                      {%- endif -%}
+                    {%- endfor -%}
+                  </ul>
+                {% else %}
+                  <p>
+                    This interaction is further specified via
+                    {{ linked_name_with_icon(exchange.exchange_items[0]) | safe }}
+                    Exchange Item
+                  </p>
+                  {%- if exchange_items_catalog is not none
+                    and exchange.exchange_items[0] not in exchange_items_catalog -%}
+                    {{- exchange_items_catalog.append(exchange.exchange_items[0]) -}}
+                  {%- endif -%}
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:red">No exchanges defined for the interface.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_interfaces_section(object, interfaces, exchange_items_catalog) %}
   {% for interface in interfaces %}
     {% if loop.first %}
       <p>
@@ -1072,53 +1463,8 @@
       <p>
         The interface may be used for the following functional interactions:
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Interaction description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for exchange in interface.allocated_functional_exchanges %}
-            <tr>
-              <td>
-                <a href="{{ exchange | make_href }}"
-                  >{{ "LEXC-" + exchange.uuid[:5] | upper }}</a
-                >
-              </td>
-              <td>
-                {{ describe_exchange(exchange) | safe }}
-                {% if exchange.exchange_items %}
-                  {% if exchange.exchange_items | length > 1 %}
-                    <p>
-                      {{ exchange.name }} is further specified via the
-                      following Exchange Items:
-                    </p>
-                    <ul>
-                      {%- for item in exchange.exchange_items -%}
-                        <li>{{ linked_name_with_icon(item) | safe }}</li>
-                        {%- if item not in exchange_items_catalog -%}
-                          {{- exchange_items_catalog.append(item) -}}
-                        {%- endif -%}
-                      {%- endfor -%}
-                    </ul>
-                  {% else %}
-                    <p>
-                      This interaction is further specified via
-                      {{ linked_name_with_icon(exchange.exchange_items[0]) | safe }}
-                      Exchange Item
-                    </p>
-                  {% endif %}
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p style="color:red">No exchanges defined for the interface.</p>
     {% endif %}
+    {{ render_interface_exchanges(interface, exchange_items_catalog) | safe }}
   {% else %}
     <p style="color:red">No interfaces defined for {{ object.name }}</p>
   {% endfor %}
@@ -1235,7 +1581,12 @@
       {%- for constraint in constraints -%}
         <li>
           <b>{{ linked_name_with_icon(constraint) | safe }}</b>:
-          {%- set spec = constraint | attr("specification", {}) -%}
+          {#- The attr filter takes no default: it is not getattr, and
+              passing one raises TypeError at render time. No default is
+              needed either - attr yields Undefined for a constraint
+              without a specification, which the test below already
+              treats the same as an empty one. -#}
+          {%- set spec = constraint | attr("specification") -%}
           {%- if spec -%}
             {{ spec["capella:linkedText"] | safe }}
           {%- else -%}
@@ -1260,11 +1611,25 @@
     entity_singular
   )
 -%}
+  {#- An involvement often names a function as well as its own
+      sub-functions. A parent function only organises its children: it
+      owns neither the exchanges nor an allocation, so listing it here
+      would group it under a nonexistent entity and then report it as
+      unallocated. Everything below therefore works on the leaves, which
+      is also what the data flow diagram shows. -#}
+  {%- set involved_parents = activities | select("parent_function") | list -%}
+  {%- set activities = activities | reject("parent_function") | list -%}
   {%- if activities -%}
     <h3>Data Flow Diagram</h3>
     <p>{{ diagram_desc }}</p>
-    {{ render_diagram(object, "data_flow_view") }}
+    {{ render_diagram(object, "data_flow_view", hide_non_leaf_functions=True) }}
     <p>{{ summary_text }}</p>
+  {%- elif involved_parents -%}
+    <p style="color:red">
+      The only involved {{ activity_plural }} are ones that just organise
+      sub-{{ activity_plural }}, and none of those sub-{{ activity_plural }}
+      is itself involved. Involve the {{ activity_plural }} that do the work.
+    </p>
   {%- else -%}
     <p style="color:red">No {{ activity_plural }} are involved.</p>
   {%- endif %}
@@ -1328,7 +1693,11 @@
     own direct involved_elements is flagged - it's functionally necessary
     for the capability, but nobody explicitly marked it as involved.
   #}
-  {%- set functions = object.involved_functions -%}
+  {#- Parent functions are dropped for the same reason as in
+      render_data_flow_and_involved_activities: they are allocated to no
+      behaviour, so they cannot be grouped under a node and would only
+      resurface in the "without an owning Behaviour" list. -#}
+  {%- set functions = object.involved_functions | reject("parent_function") | list -%}
   {%- set direct_involved = object.involved_elements
     | selectattr("__class__.__name__", "equalto", "PhysicalComponent")
     | list
@@ -1341,7 +1710,10 @@
       and actor (blue) functions that are required to realise the
       Capability.
     </p>
-    {{ render_diagram(object, "data_flow_view") }}
+    {#- See the note on the other data flow diagram: an involvement that
+        names a function as well as its own sub-functions would show the
+        parent as an orphan box. -#}
+    {{ render_diagram(object, "data_flow_view", hide_non_leaf_functions=True) }}
     <p>
       This section groups those functions by the behaviour they're
       allocated to, and by the node that behaviour is deployed onto.
@@ -1458,5 +1830,37 @@
         <li>{{ linked_name_with_icon(func) | safe }}</li>
       {% endfor %}
     </ul>
+  {% endif %}
+{% endmacro %}
+
+{#
+  Renders the artifact folder(s) bound to `object` in artifacts/index.yaml.
+
+  Nothing here knows what kind of content it is showing: each folder's own
+  artifact.yaml says what is in it, so a link can carry a harness diagram,
+  a datasheet, a 3D model or an analysis notebook without this macro - or
+  any template calling it - changing.
+
+  `type_label` is optional descriptive metadata (the PVMT interface type,
+  where the element has one). It used to select the renderer; the manifest
+  does that now, so it is shown as a label and nothing more.
+#}
+{% macro render_artifacts_section(object, model, heading="Artifacts", type_label=None, type_heading=None) %}
+  {#- Several templates render a whole-model report with no object at
+      all; asking for the artifacts of nothing is not an error, it just
+      has no answer. -#}
+  {%- set artifact_html = render_artifacts(model, object) if object else None -%}
+  {% if artifact_html %}
+    <h2>{{ heading }}</h2>
+    {% if type_label %}
+      <p>{{ type_heading or "Interface type" }}: <b>{{ type_label }}</b></p>
+    {% endif %}
+    {{ artifact_html }}
+  {% elif type_label %}
+    <h2>{{ type_heading or "Interface" }}: {{ type_label }}</h2>
+    <p style="color: gray;">
+      No artifact is bound to this element in
+      <code>artifacts/index.yaml</code>.
+    </p>
   {% endif %}
 {% endmacro %}

@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import linked_name_with_icon, show_other_attributes, draw_icon, show_compliance_to_modelling_rules %}
+{% from "common_macros.html.j2" import draw_icon, linked_name_with_icon, render_artifacts_section, show_compliance_to_modelling_rules, show_other_attributes %}
 
 {% macro display_modified_changes(attr_diff) %}
   {% set diff = attr_diff["diff"] %}
@@ -60,3 +60,11 @@
 {% else %}
   <h1 style="color: red">Object not found</h1>
 {% endif %}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

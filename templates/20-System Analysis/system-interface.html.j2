@@ -2,27 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, linked_name, display_traceability %}
-
-{% macro describe_exchange_direction(source, target, interface, exchanges) %}
-  <p>
-    {%- set unique_exchange_names = [] -%}
-    {{ linked_name(source) | safe }}
-    should provide&nbsp;
-    {%- for fex in exchanges -%}
-      {%- if fex.name not in unique_exchange_names -%}
-        <a href="{{ fex.source.owner | make_href }}">{{ fex.name }}</a
-        >{% if not loop.last %},{% else %}{% endif %}
-        {{- unique_exchange_names.append(fex.name) -}}
-      {%- endif -%}
-    {% endfor %}
-    via <i>{{ interface.name }}</i> interface (component exchange) so that
-    {{ linked_name(target) | safe }} could&nbsp;
-    {%- for fnc in exchanges | map(attribute='target.owner') | unique(attribute="uuid") -%}
-      {{ linked_name(fnc) | safe }}{% if not loop.last %},{% else %}{% endif %}
-    {%- endfor -%}
-  </p>
-{% endmacro %}
+{% from "common_macros.html.j2" import description, display_traceability, render_artifacts_section, render_interface_exchanges, show_other_attributes %}
 
 {% if object.name %}
   <h1>
@@ -32,23 +12,14 @@
 {% else %}
   <h1>Unnamed ({{ object.__class__.__name__ }})</h1>
 {% endif %}
-{% set source_provides = [] %}
-{% set target_provides = [] %}
-{%- for fex in object.allocated_functional_exchanges -%}
-  {%- if fex.source.owner and fex.source.owner.owner and fex.source.owner.owner == object.source.owner -%}
-    {{- source_provides.append(fex) -}}
-  {% else %}
-    {{- target_provides.append(fex) -}}
-  {%- endif -%}
-{%- endfor -%}
 
-{% if source_provides %}
-  {{ describe_exchange_direction(object.source.owner, object.target.owner, object, source_provides) | safe }}
-{% endif %}
-
-{% if target_provides %}
-  {{ describe_exchange_direction(object.target.owner, object.source.owner, object, target_provides) | safe }}
-{% endif %}
+{#
+  What the interface is for, in the modeller's own words. This used to be
+  a sentence assembled from the allocated exchanges - who provides what
+  to whom - but the Functional interactions table below now says exactly
+  that, in more detail and per exchange.
+#}
+{{ description(object) | safe }}
 
 <h2>Functional context</h2>
 <p>
@@ -56,6 +27,13 @@
   are summarized by the diagram below:
 </p>
 {{ render_diagram(object, "context_diagram") }}
+
+<h2>Functional interactions</h2>
+<p>
+  {{ object.name }} may be used for the following functional interactions, and
+  for the Exchange Items each one carries:
+</p>
+{{ render_interface_exchanges(object) | safe }}
 
 {{ display_traceability(object) | safe }}
 
@@ -65,12 +43,23 @@
   set excluded = [
     "allocated_functional_exchanges",
     "context_diagram",
+    "exchange_items",
     "description",
     "name",
     "parent",
     "realized_component_exchanges",
     "realizing_component_exchanges",
     "xtype",
+    "iter_ancestors",
+    "functional_exchange_allocations"
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

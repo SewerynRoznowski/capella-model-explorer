@@ -3,11 +3,11 @@
   SPDX-License-Identifier: Apache-2.0
 #}
 {% from "common_macros.html.j2" import render_artifacts_section, render_constraints_section, show_other_attributes %}
-{% from 'functional.html.j2' import describe_function %}
+{% from 'functional.html.j2' import describe_parent_function %}
 
-{#- describe_function already renders a Requirements section of its own,
-    so this template adds only the constraints. -#}
-{{ describe_function(object) | safe }}
+{#- describe_parent_function already renders a Requirements section
+    of its own, so this template adds only the constraints. -#}
+{{ describe_parent_function(object) | safe }}
 
 {{ render_constraints_section(object, model) | safe }}
 
@@ -19,6 +19,7 @@
     "boundary_view",
     "context_diagram",
     "description",
+    "functions",
     "hierarchy_view",
     "inputs",
     "involved_in",
@@ -36,6 +37,8 @@
     "uuid",
     "validate",
     "xtype",
+    "iter_ancestors",
+    "exchanges"
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}

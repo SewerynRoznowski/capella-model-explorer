@@ -8,11 +8,12 @@
   display_property_label,
   linked_name_with_icon,
   render_allocated_functions,
+  render_artifacts_section,
   render_capability_section,
   render_constraints_section,
   render_exchange_items_catalog,
-  render_involved_components_section,
   render_interfaces_section,
+  render_involved_components_section,
   render_pvmt_section,
   render_reqs_by_type,
   show_other_attributes
@@ -98,3 +99,11 @@
   <h2>Appendix A: Exchange Items Catalogue</h2>
   {{ render_exchange_items_catalog(exchange_items_catalog) | safe }}
 {% endif %}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

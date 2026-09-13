@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, description %}
+{% from "common_macros.html.j2" import description, render_artifacts_section, render_state_machine, show_other_attributes %}
 
 {% macro render_name_with_icon(obj) %}
   <a href="hlink://{{ obj.uuid }}">
@@ -30,6 +30,13 @@
 </h1>
 
 <p>A region of {{ render_name_with_icon_and_type(object.parent) | safe }}</p>
+
+{{
+  render_state_machine(
+    object,
+    intro="The states of this region and the transitions between them. A state that is decomposed is drawn opened, with its own regions inside."
+  ) | safe
+}}
 
 {% macro describe_transition(tx) %}
   {% if tx.guard %}
@@ -155,9 +162,18 @@
 {%-
   set excluded = [
     "name",
+    "state_machine_view",
     "states",
     "transitions",
     "xtype",
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

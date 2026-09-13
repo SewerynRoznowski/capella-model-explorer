@@ -15,6 +15,32 @@ import logfmter
 ACCESS_LOGGER = "uvicorn.access"
 
 
+def sub_functions(obj):
+    """Return the sub-functions of a function.
+
+    ``AbstractFunction.functions`` is not usable for this: capellambse
+    declares ``pa.PhysicalFunction.functions`` against the XML tag of
+    physical *components*, so it comes back empty for every physical
+    function, decomposed or not. Walking the ``parent`` side instead is
+    correct on all four layers.
+    """
+    return [
+        child
+        for child in obj._model.search(type(obj))
+        if getattr(child, "parent", None) == obj
+    ]
+
+
+def is_leaf_function(obj) -> bool:
+    """Check whether a function does the work itself.
+
+    A function that owns sub-functions only organises them; the work,
+    and with it the exchanges and the allocation, belongs to its
+    children.
+    """
+    return not sub_functions(obj)
+
+
 def compute_file_hash(file_path: str):
     """Compute a hash for the given file."""
     if not pathlib.Path(file_path).exists():

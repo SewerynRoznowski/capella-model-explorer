@@ -2,14 +2,10 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from "common_macros.html.j2" import render_artifacts_section, render_constraints_section, show_other_attributes %}
-{% from 'functional.html.j2' import describe_function %}
+{% from "common_macros.html.j2" import render_artifacts_section, show_other_attributes %}
+{% from 'functional.html.j2' import describe_parent_function %}
 
-{#- describe_function already renders a Requirements section of its own,
-    so this template adds only the constraints. -#}
-{{ describe_function(object) | safe }}
-
-{{ render_constraints_section(object, model) | safe }}
+{{ describe_parent_function(object) | safe }}
 
 <h2>Other properties of "{{ object.name }}"</h2>
 {%-
@@ -19,21 +15,16 @@
     "boundary_view",
     "context_diagram",
     "description",
+    "functions",
     "hierarchy_view",
     "inputs",
-    "involved_in",
     "name",
     "outputs",
     "owner",
     "parent",
     "property_value_groups",
     "realization_view",
-    "realized_functions",
-    "realized_operational_activities",
-    "realizing_functions",
-    "realizing_logical_functions",
     "related_exchanges",
-    "uuid",
     "validate",
     "xtype",
   ]

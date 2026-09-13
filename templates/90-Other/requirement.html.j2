@@ -2,7 +2,7 @@
   Copyright DB InfraGO AG and contributors
   SPDX-License-Identifier: Apache-2.0
 #}
-{% from 'common_macros.html.j2' import show_other_attributes, req_rels, render_requirement_attributes, get_requirement_state %}
+{% from "common_macros.html.j2" import get_requirement_state, render_artifacts_section, render_requirement_attributes, req_rels, show_other_attributes %}
 
 {% set req_state = get_requirement_state(object.attributes) | trim %}
 
@@ -49,3 +49,11 @@
 {{ render_requirement_attributes(object) | safe }}
 <h2> Other properties of {{ object.name }}</h2>
 {{ show_other_attributes(object, excluded=["progress_status", "context_diagram", "attributes", "related", "relations", "requirements", "text", "owner", "validate", "xtype", "owned_relations", "requirements_relations"], hide_rules_check=True, hide_unset_attrs=True) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

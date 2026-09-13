@@ -4,9 +4,10 @@
 #}
 {%
   from 'common_macros.html.j2' import
+  display_traceability,
+  render_artifacts_section,
   render_functional_chain,
   render_related_diagrams,
-  display_traceability,
   show_other_attributes
 %}
 
@@ -34,3 +35,11 @@
   ]
 -%}
 {{ show_other_attributes(object, excluded=excluded) | safe }}
+
+{#
+  Supporting documentation bound to this element in
+  artifacts/index.yaml - a wiring diagram, a datasheet, a 3D model, an
+  analysis notebook. Renders nothing at all when no artifact is bound,
+  so it costs an unbound element neither a heading nor a placeholder.
+#}
+{{ render_artifacts_section(object, model) | safe }}

@@ -205,9 +205,11 @@ dependencies = [
     { name = "jinja2" },
     { name = "logfmter" },
     { name = "lxml" },
+    { name = "mbse-artifact-viewer", extra = ["pdf"] },
     { name = "prometheus-client" },
     { name = "python-fasthtml" },
     { name = "uvicorn" },
+    { name = "wireviz" },
 ]
 
 [package.dev-dependencies]
@@ -237,14 +239,16 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "capellambse", specifier = ">=0.7.12" },
-    { name = "capellambse-context-diagrams", specifier = ">=0.7.23" },
+    { name = "capellambse-context-diagrams", git = "https://github.com/SewerynRoznowski/capellambse-context-diagrams.git?rev=380e551c834aedf66042b795d7854c764837e6f1" },
     { name = "click", specifier = ">=8.3.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "logfmter", specifier = ">=0.0.11" },
     { name = "lxml", specifier = ">=6.0.2" },
+    { name = "mbse-artifact-viewer", extras = ["pdf"], git = "https://github.com/SewerynRoznowski/Artifact-Renderer.git?rev=f1cd01fdd0a4810e2f59effbea08b8ee4297e8cb" },
     { name = "prometheus-client", specifier = ">=0.23.1" },
     { name = "python-fasthtml", specifier = ">=0.12.35" },
     { name = "uvicorn", specifier = ">=0.38.0" },
+    { name = "wireviz", specifier = ">=0.4.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -273,7 +277,7 @@ docs = [
 
 [[package]]
 name = "capellambse"
-version = "0.7.13"
+version = "0.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "awesomeversion" },
@@ -288,32 +292,28 @@ dependencies = [
     { name = "svgwrite" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/a4/a863832d7a490c8ab86af327c2c32c8201d9adccac656970998ee30856b8/capellambse-0.7.13.tar.gz", hash = "sha256:954e4f5c59b44a7ce6d2a70f8ed17aeb9440ff4fd3b2c71483b5ea3e3054141c", size = 5131546, upload-time = "2025-12-12T15:24:46.267Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/cf/cd894179975960d554d8a2bf9371b2cc951d398bfaed9cdaa30047ee16e6/capellambse-0.8.1.tar.gz", hash = "sha256:b5f9528e3936f60d95fd2cec60d92fdbee06030ff80e6e99baa8a38d2f899b7e", size = 5132096, upload-time = "2026-01-20T15:28:58.141Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/c4/fe341d1ffae383b71b005b5fb5e7d54f8634e67dcb2faae3b6d510698585/capellambse-0.7.13-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:9f86544c3de83503145ff7f472d427b5673b76a88492c5e1cffcaaf41f1417e9", size = 672578, upload-time = "2025-12-12T15:24:25.361Z" },
-    { url = "https://files.pythonhosted.org/packages/26/3a/b62df4eb89e4d4316a69156df72a519eaf35ae04e1d9452686f80d7b136d/capellambse-0.7.13-cp310-abi3-macosx_11_0_x86_64.whl", hash = "sha256:29ea386d3f13da997b5a9eeeb6432ced66d7ae62d069e44250e93608ca89a0ae", size = 680286, upload-time = "2025-12-12T15:24:32.799Z" },
-    { url = "https://files.pythonhosted.org/packages/32/80/ae2e37dc0fc08f22e419c4713243ce53941557f182a50d72bef1b94c41bd/capellambse-0.7.13-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:9134c238546f116677bc00e216a150aa8bf9662444e030403003b86d4e885f71", size = 704576, upload-time = "2025-12-12T15:24:34.727Z" },
-    { url = "https://files.pythonhosted.org/packages/5b/bf/ff960512b41fccffc4c86f7cb0a802292c8c8781c123aa93743400e078af/capellambse-0.7.13-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:948f99b89f561ea86d950476dfd67621fb9d1c1d56501d205f67bf1e81cdc000", size = 712840, upload-time = "2025-12-12T15:24:36.544Z" },
-    { url = "https://files.pythonhosted.org/packages/ec/d6/c481c1066fa3e24b21d51155c695ab95fc0f05395a5e12ffc40d8009167d/capellambse-0.7.13-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:40d084c120d3d39a2e7d4b5961b7e5e3a837910edc71ffe8f25226b3653da593", size = 770522, upload-time = "2025-12-12T15:24:38.189Z" },
-    { url = "https://files.pythonhosted.org/packages/26/e5/f0b231a8222bf33c22a6345449d438393a56f1650f06c8d74874eb255751/capellambse-0.7.13-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:edbd971358107f5c261171c8f1dbbe30a02a8a71e16eb3d5ff55b3c7ca84f17d", size = 784967, upload-time = "2025-12-12T15:24:39.712Z" },
-    { url = "https://files.pythonhosted.org/packages/fc/85/69021d11061795b89d93b47738dfb3fed3502d20b3110d4638a5bf5c1191/capellambse-0.7.13-cp310-abi3-win32.whl", hash = "sha256:b3f1fe0aa592e894448a14e14df28daf8a50f85b1c1bae53939dfcf44f247568", size = 559904, upload-time = "2025-12-12T15:24:41.146Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/74/2540a029a45f5fa9e6b71d744e8f3bec1411b1157c7f9dd396f5119badcf/capellambse-0.7.13-cp310-abi3-win_amd64.whl", hash = "sha256:5ec5b5cd7527cf417907941f38c814faadaa26c6c48c3bdda0f9e3c5a3d49629", size = 563414, upload-time = "2025-12-12T15:24:42.646Z" },
-    { url = "https://files.pythonhosted.org/packages/27/93/c8c74e0a909ffe3610adbd1012db7c1cee4459dda21e517558b2e53aa41c/capellambse-0.7.13-py3-none-any.whl", hash = "sha256:1f2e4b64768b771618a6c89c666a6e3e34f014a7aa0d11e2da9ca45196ed75bd", size = 430431, upload-time = "2025-12-12T15:24:44.358Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/d3/aa78ddcd538dfc935dabfaca6f15a09ff02f11cdb9a55d66644a81200978/capellambse-0.8.1-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:939be01e5ff0c6903ebc798ada43dd0631bb3b6af64943ea739d16c67044b67b", size = 677019, upload-time = "2026-01-20T15:28:42.966Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/54/727847f0f6c3426e1069662e9253a24dee5585c4da6cc1ab2c07ca233f68/capellambse-0.8.1-cp311-abi3-macosx_11_0_x86_64.whl", hash = "sha256:fb66239bde08ae747b15666f8f18eab459ddd235d1762157aaeff912f0191aa6", size = 683266, upload-time = "2026-01-20T15:28:45.034Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/53/aeb2725ccfa1c9a5eac905d309215b8e524066a726e06518fd5d5f876028/capellambse-0.8.1-cp311-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:b8274a20a760cf45feec0ce6bc12dd332b0d2508572e408a7fc5d6de58826ff0", size = 706639, upload-time = "2026-01-20T15:28:46.506Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/74/fa600688f180cc4b610d3d5da85ff9756bc7c9a3e908cd70a1d2001f9b69/capellambse-0.8.1-cp311-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:f45fdb2ba7b20a01f6b897727cd2c814a84a0fcd71f7c17e1313ecc93be795e7", size = 716176, upload-time = "2026-01-20T15:28:47.939Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/d8/40ffa2d4f0ee57e8cefef9224b1e7f08a7c37b4420cb731a802203792b1f/capellambse-0.8.1-cp311-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:cd3049f3f305f67076ff2180192906331a8dbe0b7becfa3cd2d4aa1969b3f627", size = 772984, upload-time = "2026-01-20T15:28:49.355Z" },
+    { url = "https://files.pythonhosted.org/packages/04/d6/a49760ab6a937df12aac0651014817d5d5c6160f489ab9d016af4bd01d7e/capellambse-0.8.1-cp311-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:e94fcc97e80aa5c3487ecb3efdf1dd1d999919d47375af46622f139a4e8c64f9", size = 787333, upload-time = "2026-01-20T15:28:50.762Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/c0/4e7df5f802246ca1c6962e051f1078566dbcc46d2edbd6f63fbf2610d408/capellambse-0.8.1-cp311-abi3-win32.whl", hash = "sha256:bc7fbbfeb1a76bf247cf3857088107033b5ddca5e2219ba5fabd29decb1b6bda", size = 563337, upload-time = "2026-01-20T15:28:52.358Z" },
+    { url = "https://files.pythonhosted.org/packages/75/92/98ee4d7c499d9daea17f225719179adb582b846c7cc4364715917cd037aa/capellambse-0.8.1-cp311-abi3-win_amd64.whl", hash = "sha256:79e68b0dc27fdaa8db51ff8c828f8d403d79e40c411b39883987d79a932f8ecb", size = 566443, upload-time = "2026-01-20T15:28:54.078Z" },
+    { url = "https://files.pythonhosted.org/packages/76/de/82388783f2da3c013f772393461c290ed40b9667fd730c3aba2adb376a75/capellambse-0.8.1-py3-none-any.whl", hash = "sha256:69d16c7082bc559d0925532c48cef175309fdcc23504dafc81721f3cc8d5309d", size = 430944, upload-time = "2026-01-20T15:28:55.491Z" },
 ]
 
 [[package]]
 name = "capellambse-context-diagrams"
-version = "0.7.24"
-source = { registry = "https://pypi.org/simple" }
+version = "0.8.7.dev9+g380e551c8"
+source = { git = "https://github.com/SewerynRoznowski/capellambse-context-diagrams.git?rev=380e551c834aedf66042b795d7854c764837e6f1#380e551c834aedf66042b795d7854c764837e6f1" }
 dependencies = [
     { name = "capellambse" },
     { name = "platformdirs" },
     { name = "pydantic" },
     { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/00/1a459d7fc60992a6fdf421dfbfc0c0feae1c7cdf55c3511f177680327cb7/capellambse_context_diagrams-0.7.24.tar.gz", hash = "sha256:d2d8367daa323481a7c8d98f712222ab269dd86fb4d04756ae862f942627d220", size = 552435, upload-time = "2025-12-08T09:41:40.514Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/3b/5fe624763b2448b6553fb4656b37c22996e3c0bcd21ba9db65314449c0bc/capellambse_context_diagrams-0.7.24-py3-none-any.whl", hash = "sha256:5bda63d185cbad2413ff55b0f6d6551fdb816a71e829bf7a5c0efd05aa8a5620", size = 72163, upload-time = "2025-12-08T09:41:38.98Z" },
 ]
 
 [[package]]
@@ -588,6 +588,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4e/29/ff3b83a1ffce74676043ab3e7540d398e0b1ce7660917a00d7c4958b93da/furo-2025.9.25.tar.gz", hash = "sha256:3eac05582768fdbbc2bdfa1cdbcdd5d33cfc8b4bd2051729ff4e026a1d7e0a98", size = 1662007, upload-time = "2025-09-25T21:37:19.221Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/69/964b55f389c289e16ba2a5dfe587c3c462aac09e24123f09ddf703889584/furo-2025.9.25-py3-none-any.whl", hash = "sha256:2937f68e823b8e37b410c972c371bc2b1d88026709534927158e0cb3fac95afe", size = 340409, upload-time = "2025-09-25T21:37:17.244Z" },
+]
+
+[[package]]
+name = "graphviz"
+version = "0.21"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/b3/3ac91e9be6b761a4b30d66ff165e54439dcd48b83f4e20d644867215f6ca/graphviz-0.21.tar.gz", hash = "sha256:20743e7183be82aaaa8ad6c93f8893c923bd6658a04c32ee115edb3c8a835f78", size = 200434, upload-time = "2025-06-15T09:35:05.824Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl", hash = "sha256:54f33de9f4f911d7e84e4191749cac8cc5653f815b06738c54db9a15ab8b1e42", size = 47300, upload-time = "2025-06-15T09:35:04.433Z" },
 ]
 
 [[package]]
@@ -866,6 +875,18 @@ wheels = [
 ]
 
 [[package]]
+name = "markdown-it-py"
+version = "4.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mdurl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/ff/7841249c247aa650a76b9ee4bbaeae59370dc8bfd2f6c01f3630c35eb134/markdown_it_py-4.2.0.tar.gz", hash = "sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49", size = 82454, upload-time = "2026-05-07T12:08:28.36Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl", hash = "sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a", size = 91687, upload-time = "2026-05-07T12:08:27.182Z" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -915,6 +936,29 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/80/d6/2d1b89f6ca4bff1036499b1e29a1d02d282259f3681540e16563f27ebc23/markupsafe-3.0.3-cp313-cp313t-win32.whl", hash = "sha256:69c0b73548bc525c8cb9a251cddf1931d1db4d2258e9599c28c07ef3580ef354", size = 14612, upload-time = "2025-09-27T18:37:02.639Z" },
     { url = "https://files.pythonhosted.org/packages/2b/98/e48a4bfba0a0ffcf9925fe2d69240bfaa19c6f7507b8cd09c70684a53c1e/markupsafe-3.0.3-cp313-cp313t-win_amd64.whl", hash = "sha256:1b4b79e8ebf6b55351f0d91fe80f893b4743f104bff22e90697db1590e47a218", size = 15200, upload-time = "2025-09-27T18:37:03.582Z" },
     { url = "https://files.pythonhosted.org/packages/0e/72/e3cc540f351f316e9ed0f092757459afbc595824ca724cbc5a5d4263713f/markupsafe-3.0.3-cp313-cp313t-win_arm64.whl", hash = "sha256:ad2cf8aa28b8c020ab2fc8287b0f823d0a7d8630784c31e9ee5edea20f406287", size = 13973, upload-time = "2025-09-27T18:37:04.929Z" },
+]
+
+[[package]]
+name = "mbse-artifact-viewer"
+version = "0.1.0"
+source = { git = "https://github.com/SewerynRoznowski/Artifact-Renderer.git?rev=f1cd01fdd0a4810e2f59effbea08b8ee4297e8cb#f1cd01fdd0a4810e2f59effbea08b8ee4297e8cb" }
+dependencies = [
+    { name = "markdown-it-py" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+pdf = [
+    { name = "pypdf" },
+]
+
+[[package]]
+name = "mdurl"
+version = "0.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
 ]
 
 [[package]]
@@ -1238,6 +1282,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/4d/9683a57f2e8b9263910ef497a99d88622f4fb1c158decb867fd40a41bfdd/pylsp_mypy-0.7.0.tar.gz", hash = "sha256:e94f531d4ce523222c2af7471abe396cfeb4cc3c4b181d54462fb6d553e1e0b3", size = 18529, upload-time = "2025-01-25T13:15:38.978Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/7d/324859fa4af565db32ff8d924fd10dd49922756736be12d783be3813ffc8/pylsp_mypy-0.7.0-py3-none-any.whl", hash = "sha256:756377d05d251d2e31d1963397654149b9c1ea5b0ba1aedd74adef76decd32e9", size = 12232, upload-time = "2025-01-25T13:15:37.472Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.18.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/c2/e537e78a8282b51ed47031566be118debbc34c04782a9afd8739672eb07d/pypdf-6.18.1.tar.gz", hash = "sha256:2441fc839053745638d9b9ddb38ed66beed8d611f47a3036c9838fc4e3074dea", size = 7027577, upload-time = "2026-09-11T10:10:07.616Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/13/645df3995075112cb3cce15e8797c205f0f88fb50acc11012b84b071bc22/pypdf-6.18.1-py3-none-any.whl", hash = "sha256:ee93a2665670ecf57ee81d197a4ca548f3dc15f9cefc56e59b8140866aaa3de5", size = 394327, upload-time = "2026-09-11T10:10:06.103Z" },
 ]
 
 [[package]]
@@ -2068,6 +2121,21 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/86/eb/20b6cdf273913d0ad05a6a14aed4b9a85591c18a987a3d47f20fa13dcc47/websockets-15.0.1-cp313-cp313-win32.whl", hash = "sha256:ba9e56e8ceeeedb2e080147ba85ffcd5cd0711b89576b83784d8605a7df455fa", size = 176393, upload-time = "2025-03-05T20:02:53.814Z" },
     { url = "https://files.pythonhosted.org/packages/1b/6c/c65773d6cab416a64d191d6ee8a8b1c68a09970ea6909d16965d26bfed1e/websockets-15.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:e09473f095a819042ecb2ab9465aee615bd9c2028e4ef7d933600a8401c79561", size = 176837, upload-time = "2025-03-05T20:02:55.237Z" },
     { url = "https://files.pythonhosted.org/packages/fa/a8/5b41e0da817d64113292ab1f8247140aac61cbf6cfd085d6a0fa77f4984f/websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f", size = 169743, upload-time = "2025-03-05T20:03:39.41Z" },
+]
+
+[[package]]
+name = "wireviz"
+version = "0.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "graphviz" },
+    { name = "pillow" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/31/26e518535ae54f540dae0e83e583240d4bae9a883a6213d751b7b0c00304/wireviz-0.4.1.tar.gz", hash = "sha256:0e25ad8c2e3a269a7dd4a7f45e4e8d304db7e0432b1843a620acfa6be70570e1", size = 50281, upload-time = "2024-07-13T11:29:30.319Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/7a/5fc147e36159bdf7ff70cdd239e48512384ce32708ef8410df8fd62b4cf8/wireviz-0.4.1-py3-none-any.whl", hash = "sha256:5dfdfec91e5d26e4f27f0f9d031672da7fb3c133d127167d233f4742f01873a2", size = 52083, upload-time = "2024-07-13T11:29:28.972Z" },
 ]
 
 [[package]]

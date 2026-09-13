@@ -16,6 +16,18 @@
   scope:
     type: SystemFunction
     below: sa
+    filters:
+      sub_functions: empty
+- template: system_function-parent.html.j2
+  id: system-function-parent
+  name: Parent System Functions
+  description: A function that exists to organise sub-functions rather than to do work itself, with its boundary and its internal data flow.
+  isStable: true
+  scope:
+    type: SystemFunction
+    below: sa
+    filters:
+      sub_functions: not_empty
 - template: system-actor.html.j2
   id: system-actors
   name: System Actors

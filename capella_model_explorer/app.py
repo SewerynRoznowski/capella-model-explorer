@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import mimetypes
 import pathlib
 import tempfile
 import time
@@ -19,12 +20,16 @@ import starlette
 import starlette.middleware
 from fasthtml import common as fh
 from fasthtml import ft
+from mbse_artifact_viewer import pdfpages
 
 import capella_model_explorer.constants as c
 from capella_model_explorer import (
+    artifacts,
     components,
     constraints,
+    core,
     interfaces,
+    modelling_rules,
     physical,
     reports,
     state,
@@ -45,6 +50,7 @@ async def lifespan(_):
     model_spec = capellambse.loadinfo(c.MODEL)
     logger.info("Loading model from: %s", model_spec["path"])
     state.model = capellambse.MelodyModel(**model_spec)
+    modelling_rules.init(state.model)
     logger.info("Loading templates from: %s", c.TEMPLATES_DIR)
     reports.load_templates()
     state.jinja_env = jinja2.Environment(
@@ -57,6 +63,7 @@ async def lifespan(_):
     state.jinja_env.filters["make_href"] = reports.make_href_filter
     state.jinja_env.filters["tojson"] = reports.tojson_filter
     state.jinja_env.globals["render_diagram"] = reports.diagram_placeholder
+    state.jinja_env.globals["sub_functions"] = reports.sub_functions
     state.jinja_env.globals["evaluate_constraint"] = (
         constraints.evaluate_constraint
     )
@@ -83,6 +90,8 @@ async def lifespan(_):
         interfaces.render_connector_diagram
     )
     state.jinja_env.globals["get_display_label"] = interfaces.get_display_label
+    state.jinja_env.globals["render_artifacts"] = artifacts.render_artifacts
+    state.jinja_env.globals["has_artifacts"] = artifacts.has_artifacts
     state.jinja_env.globals["resolve_hosting_nodes"] = (
         physical.resolve_hosting_nodes
     )
@@ -92,6 +101,10 @@ async def lifespan(_):
     state.jinja_env.globals["resolve_outermost_node"] = (
         physical.resolve_outermost_node
     )
+    state.jinja_env.tests["parent_function"] = lambda obj: not (
+        core.is_leaf_function(obj)
+    )
+    state.jinja_env.tests["leaf_function"] = core.is_leaf_function
     state.jinja_env.tests["diagram"] = lambda obj: isinstance(
         obj, capellambse.model.AbstractDiagram | capellambse.diagram.Diagram
     )
@@ -355,6 +368,49 @@ def render_template(
     return (
         components.report_placeholder(template, model_element_uuid),
         components.breadcrumbs(template, model_element_uuid, oob=True),
+    )
+
+
+@ar.get("/" + artifacts.FILE_ROUTE + "/{path:path}")
+def artifact_file(path: str, pages: str = "") -> t.Any:
+    """Serve a file out of an artifact folder.
+
+    Some artifact content cannot be inlined into the page: a browser will
+    not open a PDF handed to it as a ``data:`` URI, and a 3D model is
+    fetched by the viewer. Those need a real URL, and this is it.
+
+    Reads go through the model's own resource handler, which is sandboxed
+    to the model root and refuses to escape it - so this route can serve
+    a datasheet next to the ``.aird`` without also being a way to read
+    the rest of the filesystem.
+
+    ``?pages=1-3`` on a PDF serves only those pages. The cutting happens
+    here rather than in the renderer because the browser needs a URL to
+    point its viewer at, so whatever answers that URL is what has to do
+    it.
+    """
+    handler = state.model.resources[artifacts._ROOT_RESOURCE]
+    try:
+        data = handler.read_file(path)
+    except FileNotFoundError:
+        return fh.Response(f"No such artifact file: {path}", status_code=404)
+    except Exception:
+        logger.exception("Cannot read artifact file %r", path)
+        return fh.Response(f"Cannot read: {path}", status_code=404)
+
+    if pages and path.lower().endswith(".pdf"):
+        try:
+            data = pdfpages.extract(data, pdfpages.parse_selection(pages))
+        except Exception:
+            logger.exception(
+                "Cannot take pages %r of %r; serving it in full", pages, path
+            )
+
+    media_type, _ = mimetypes.guess_type(path)
+    return fh.Response(
+        data,
+        media_type=media_type or "application/octet-stream",
+        headers={"Cache-Control": f"max-age={c.CACHE_MAX_AGE}"},
     )
 
 
